@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:og="http://ogp.me/ns#"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
+<head>
+    <title>Setting Up This Blog - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
+    <!-- Open Graph tags -->
+            <meta property="og:type" content="article"/>
+            <meta property="og:title" content="Setting Up This Blog"/>
+            <meta property="og:url" content="/setting-up.html"/>
+            <meta property="og:description" content="Setting Up This Blog"/>
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.flatly.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/solarizedlight.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+        <link href="/static\custom.css" rel="stylesheet">
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/About.html">
+                             About
+                          </a></li>
+                        <li class="active">
+                            <a href="/category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/setting-up.html"
+                       rel="bookmark"
+                       title="Permalink to Setting Up This Blog">
+                        Setting Up This Blog
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2014-05-26T13:00:00"> Mon 26 May 2014</time>
+    </span>
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/blog.html">Blog</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>This blog uses the static site generator <a href="http://www.getpelican.com">Pelican</a> and is hosted on <a href="http://www.github.com">Github</a>. Here are a few notes on how I set things up.</p>
+<h2>Installing Pelican</h2>
+<p>First, get Python 2.7, and get the Python package manager Pip. For Windows, you can follow the instructions <a href="http://docs.python-guide.org/en/latest/starting/install/win/">here</a>.</p>
+<p>Make a directory for your blog, such as <code>c:\blog</code>. Then, <code>pip install pelican</code> and if you want Markdown support <code>pip install markdown</code>. Many online guides suggest you put Pelican into a Python virtualenv. That's not necessary, but it keeps things tidy, so I made a virtualenv at <code>c:\blog</code> and installed Pelican using Pip like this:</p>
+<div class="highlight"><pre>virtualenv virtualenv-pelican
+cd virtualenv-pelican\scripts
+activate
+pip install pelican markdown
+</pre></div>
+
+
+<h2>Creating The Blog</h2>
+<p>Next, I set up the blog for Pelican. I put the source content that Pelican processes into <code>c:\blog\source</code> and the generated HTML into <code>c:\blog\site</code> by doing this:</p>
+<div class="highlight"><pre>md c:\blog\source c:\blog\site
+cd c:\blog\source
+pelican-quickstart
+</pre></div>
+
+
+<p>The default answers to the questions are usually reasonable, but season to taste.</p>
+<p>By default, Pelican puts the generated HTML into the <code>output</code> directory relative to pelicanconf.py. I prefer to call it the <code>site</code> directory and have it sit side-by-side the <code>source</code> directory because it makes the Github setup a bit cleaner. I edited the <code>pelicanconf.py</code> and changed the <code>OUTPUTPATH</code> variable to point to <code>c:\blog\site</code>:</p>
+<div class="highlight"><pre>OUTPUT_PATH = &#39;../site&#39;
+</pre></div>
+
+
+<p>Then add a post in the <code>content</code> directory at <code>c:\blog\source\content</code>. A simple Markdown post should work:</p>
+<div class="highlight"><pre>Title: First Post
+Date: 2014-5-26 12:00
+Tags: Blog
+Category: Blog
+Slug: first-post
+Author: David Farrell
+Summary: First Post
+It&#39;s so easy when everybody&#39;s trying to please me, baby
+</pre></div>
+
+
+<p>We should be able to generate the blog now. Try this:</p>
+<div class="highlight"><pre>make html
+make serve
+</pre></div>
+
+
+<p>Browse to <code>127.0.0.1:8000</code> and, hey, it works!</p>
+<h2>Live Editing</h2>
+<p>In one shell, run <code>make regenerate</code>. This automatically regenerates the <code>site</code> directory whenever you change a file in the <code>source</code> directory. In another shell, run the local web server <code>make serve</code>. Now you can change any file, refresh your browser, and immediately see your changes.</p>
+<p>The command <code>make devserver</code> will also do that, but it calls a Bash script, which doesn't work on Windows.</p>
+<h2>Pelican Themes</h2>
+<p>The default Pelican theme isn't spectacular. You can get additional themes by cloning the Pelican theme repository:</p>
+<div class="highlight"><pre>cd c:\blog\source
+git clone https://github.com/getpelican/pelican-themes themes
+</pre></div>
+
+
+<p>You'll find all the themes in the new <code>themes</code> directory. To choose one, set the <code>THEME</code> variable in <code>pelicanconf.py</code>:</p>
+<div class="highlight"><pre>THEME = &#39;themes/pelican-bootstrap3&#39;
+</pre></div>
+
+
+<p>I like the Pelican-Bootstrap3 theme. It has a <code>README.md</code> that you'll want to read. The Bootstrap theme is actually themed itself with <a href="http://bootswatch.com/">Bootswatch</a>. You can also easily customize the CSS and set the syntax highlighting style. Here's the relevant bits in my <code>pelicanconf.py</code>:</p>
+<div class="highlight"><pre>BOOTSTRAP_THEME = &#39;cyborg&#39;        # Bootswatch sub-theme for Bootstrap
+PYGMENTS_STYLE = &#39;monokai&#39;        # Syntax highlighting theme
+CUSTOM_CSS = &#39;static\custom.css&#39;
+STATIC_PATHS=[&#39;images&#39;,&#39;extra\custom.css&#39;]
+EXTRA_PATH_METADATA = {&#39;extra\custom.css&#39;: {&#39;path&#39;: &#39;static\custom.css&#39;}}
+</pre></div>
+
+
+<p>The full <code>extra\custom.css</code> path is <code>c:\blog\source\content\extra\custom.css</code> (some of Pelican's paths were relative to the <code>content</code> directory). The only thing my custom.css does right now is change the backtick block highlighting colors; for some reason, those colors don't change with the Bootstrap theme or subthemes. Here's what that looks like:</p>
+<div class="highlight"><pre>code {
+ padding:2px 4px;
+ font-size:90%;
+ white-space:nowrap;
+ background-color:#080808;
+ color:#b0b0b0;
+ border-radius:4px
+}
+</pre></div>
+
+
+<h2>Github Pages Hosting</h2>
+<p>I'm using <a href="https://pages.github.com/">Github Pages</a> to host this blog. I created two repositories. One is named <code>nosferalatu.github.io</code> and holds the blog site, and the other is named <code>nosferalatu.github.io.source</code> and holds the Pelican source for the blog. You can configure git branches to hold everything in a single repo, but I thought it was more straightforward to just use two repositories.</p>
+<p>I cleaned up the <code>themes</code> directory to remove the themes I don't want (otherwise, that directory is around 176 megs). I then init both repositories and push them to Github with this:</p>
+<div class="highlight"><pre>cd c:\blog\site
+git init
+git add -A .
+git commit -m &quot;initial commit&quot;
+git remote add origin https://github.com/nosferalatu/nosferalatu.github.io.git
+git push -u origin master
+cd c:\blog\source
+git init
+git add -A .
+git commit -m &quot;initial commit&quot;
+git remote add origin https://github.com/nosferalatu/nosferalatu.github.io.source.git
+git push -u origin master
+</pre></div>
+
+
+<p>A few minutes later, the blog appears at <a href="http://nosferalatu.github.io">nosferalatu.github.io</a>. </p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3 well well-sm" id="sidebar">
+
+<aside>
+    <section>
+        <ul class="list-group list-group-flush">
+                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+                  <ul class="list-group" id="social">
+                    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i
+                            class="fa fa-twitter-square fa-lg"></i> twitter
+                    </a></li>
+                    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i
+                            class="fa fa-github-square fa-lg"></i> github
+                    </a></li>
+                  </ul>
+                </li>
+
+
+
+
+        </ul>
+    </section>
+
+</aside>        </div>
+    </div>
+</div>
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2014 David Farrell
+            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="//code.jquery.com/jquery.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+</body>
+</html>
