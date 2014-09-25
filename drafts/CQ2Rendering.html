@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:og="http://ogp.me/ns#"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
+<head>
+    <title>Physically Based Deferred Rendering in Costume Quest 2 - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
+    <!-- Open Graph tags -->
+            <meta property="og:type" content="article"/>
+            <meta property="og:title" content="Physically Based Deferred Rendering in Costume Quest 2"/>
+            <meta property="og:url" content="/CQ2Rendering.html"/>
+            <meta property="og:description" content="Rendering in Costume Quest 2"/>
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.flatly.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/solarizedlight.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+        <link href="/static\custom.css" rel="stylesheet">
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/About.html">
+                             About
+                          </a></li>
+                        <li class="active">
+                            <a href="/category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/CQ2Rendering.html"
+                       rel="bookmark"
+                       title="Permalink to Physically Based Deferred Rendering in Costume Quest 2">
+                        Physically Based Deferred Rendering in Costume Quest 2
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2014-09-24T12:00:00"> Wed 24 September 2014</time>
+    </span>
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>Developing the rendering tech for Double Fine's Costume Quest 2 was interesting because the game released simultaneously on eight platforms: XBox 360, PS3, WiiU, Windows, OSX, Linux, XBox One, and PS4. It uses Double Fine's proprietary 3D engine, Buddha, originally written for the XBox 360 and PS3 for the game Brutal Legend. We've extended Buddha and ported it to many new platforms since then.</p>
+<p>I wouldn't recommend anyone try to release on eight platforms simultaneously. Think carefully about the costs of porting to additional platforms, especially if that work is concurrent with the game's development. Consider the cost of either creating different assets for different platforms or the cost of loss of game quality because you have to create your assets for the lowest common denominator.</p>
+<h1>Back To The Future</h1>
+<p>At the beginning of Costume Quest 2 (CQ2) development, the programmers at Double Fine looked at the state of the Buddha engine. Our main branch was running on Windows (DX9 and OpenGL 2.1), and with some work, could build for OSX and Linux. Although Buddha was originally written for XBox 360 and PS3 and that code still existed in the mainline branch, those platforms hadn't been run in over a year and suffered greatly from bitrot. We had ported Buddha to WiiU for The Cave, but that code was sitting in a separate WiiU-specific branch. Finally, we weren't running 64-bit or on DirectX 11, much less on the XBox One and PS4.</p>
+<p>The engineering schedule for CQ2 was taken up almost entirely with merging branches, resurrecting the old consoles, and bringing up the new consoles. Unfortunately, I could only spend about two weeks of time for look dev in preproduction. Fortunately, this was a sequel, so the game's art style was a known quantity. Unfortunately, the CQ2 design was more ambitious than the original Costume Quest, including levels in a swampy bayou in New Orleans and a Blade Runner inspired dystopic future. Fortunately, we had very talented tech artists who nailed down the graphics requirements in preproduction so that we could make good use of those two weeks of look dev.</p>
+<p>In that context, how did we design rendering on Costume Quest 2 to look good across so many platforms and maximize productivity for the artists?</p>
+<h1>Physically Based Rendering</h1>
+<p>Physically based rendering in a Costume Quest universe? Isn't Costume Quest inspired more by a comic book art style and less by the physical constraints of the real world? Costume Quest has two separate styles of rendering. The first is for the toon-shaded characters, and the second is for the more traditionally rendered world.</p>
+<p>The first style of rendering is for the characters, which use a toon shader and a cel outline effect. That's not even vaguely physically based; if we had more graphics dev time on CQ2, I would have looked into developing an energy conserving toon shader effect. Instead, the toon shader is a simple 1D lookup texture based on the NdotL of a single light direction. </p>
+<p>The second style of rendering is for the rest of the world, which uses an energy conserving Blinn-Phong BRDF lit by a primary shadow-casting sunlight, additional point lights, and a hemisphere light for ambient lighting. All lighting was dynamic, except for some prebaked per-vertex ambient occlusion.</p>
+<p>The energy conserving Blinn-Phong BRDF was based on Tri-Ace's work.</p>
+<p>We had already switched to phsyically based rendering for Massive Chalice, but Costume Quest 2 was the first project that's shipped with the tech. Artists didn't like it at first, but they like it now. </p>
+<h1>Deferred Rendering</h1>
+<p>The small gbuffer</p>
+<p>Used physically based material constraints to fit needed material attributes into gbuffer
+No metals, so no need for specular color. Specular reflectance was a scalar value in the range [0, .08]
+Lots of emissive (AKA incandescence) was a scalar [0, 8] value which scaled the albedo color and used it as a self-illuminating light</p>
+<p>Vertex AO, mixed with SSAO, and drop shadow AO</p>
+<p>Decals blend with albedo</p>
+<p>Two channel gbuffer layout:</p>
+<div class="highlight"><pre><span class="n">albedo</span> <span class="n">R</span>             <span class="o">|</span> <span class="n">albedo</span> <span class="n">G</span>             <span class="o">|</span> <span class="n">albedo</span> <span class="n">B</span>                     <span class="o">|</span> <span class="n">ambient</span> <span class="n">occlusion</span>
+<span class="n">normal</span> <span class="n">X</span>             <span class="o">|</span> <span class="n">normal</span> <span class="n">Y</span>             <span class="o">|</span> <span class="n">spec</span><span class="p">.</span> <span class="n">reflectance</span> <span class="o">/</span> <span class="n">emissive</span> <span class="o">|</span> <span class="n">roughness</span> <span class="o">/</span> <span class="n">cel</span> <span class="n">shaded</span> 
+</pre></div>
+
+
+<p>The ambient occlusion stored the per-vertex AO. Screen-space ambient occlusion also blended with this value. Additionally, the character drop shadows would blend with the ambient occlusion channel.</p>
+<p>The albedo was stored in gamma space. Our pipeline is gamma correct, meaning it does all lighting and blending in linear space. The geometry pass uses sRGB albedo textures, uses linear per-vertex colors, and so forth to blend in linear space; therefore, we had to convert those linear albedo values to gamma space so that we could store in an eight-bit-per-channel render target without banding.</p>
+<p>The specular reflectance and emissive were packed together using four bits each. The specular reflectance represented a value in the range [0, 0.08], so we rescaled that value to [0, 1], applied a curve (a square root) to get more precision in the low end, and stored it in he gbuffer using four bits. The emissive was prepared similarly; it had a range [0,  8], which we scaled to [0,  1], applied a square-root curve, and stored in four bits.</p>
+<p>The roughness (AKA gloss) was in the range [0, 2048], so we took the exp2 and divided by N to get into the [0, 1] range. We stored the roughness in 7 bits, and used the top bit to store the cel shaded bit. Characters were considered cel shaded, but the world geometry was not.</p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3 well well-sm" id="sidebar">
+
+<aside>
+    <section>
+        <ul class="list-group list-group-flush">
+                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+                  <ul class="list-group" id="social">
+                    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i
+                            class="fa fa-twitter-square fa-lg"></i> twitter
+                    </a></li>
+                    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i
+                            class="fa fa-github-square fa-lg"></i> github
+                    </a></li>
+                  </ul>
+                </li>
+
+
+
+
+        </ul>
+    </section>
+
+</aside>        </div>
+    </div>
+</div>
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2014 David Farrell
+            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="//code.jquery.com/jquery.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+</body>
+</html>
