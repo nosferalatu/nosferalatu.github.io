@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:og="http://ogp.me/ns#"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
+<head>
+    <title>Introducing GAGE - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
+    <!-- Open Graph tags -->
+            <meta property="og:type" content="article"/>
+            <meta property="og:title" content="Introducing GAGE"/>
+            <meta property="og:url" content="/IntroGage.html"/>
+            <meta property="og:description" content="Introducing GAGE"/>
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+        <link href="/static/custom.css" rel="stylesheet">
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/About.html">
+                             About
+                          </a></li>
+                        <li class="active">
+                            <a href="/category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/IntroGage.html"
+                       rel="bookmark"
+                       title="Permalink to Introducing GAGE">
+                        Introducing GAGE
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2014-11-30T12:00:00"> Sun 30 November 2014</time>
+    </span>
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>I've started development on a small game engine for experimenting, researching, and prototyping. I'm calling it GAGE,
+short for the Great American Graphics Engine. It's a joke about how instead of writing the <a href="http://en.wikipedia.org/wiki/Great_American_Novel">the Great American
+Novel</a> I'm writing the Great American Graphics Engine. Alternatively,
+I could have used the name 'DX11Testbed', but GAGE is shorter and has more panache.</p>
+<p>The project is hosted <a href="http://github.com/nosferalatu/gage">here on Github</a>.</p>
+<p>This project is meant to be an environment to quickly test out rendering ideas, not to be a full fledged game
+engine. Currently it displays Crytek's Sponza model and has a compute shader based GPU particle simulation. The shader
+generation and parameter management are some of the more interesting parts of the code.</p>
+<h3>Build</h3>
+<p>To build GAGE, you need:</p>
+<ul>
+<li>the Visual Studio 2010 compiler (I want to upgrade this to at least 2012)</li>
+<li>the DirectX June 2010 SDK (I am using some D3DX functions to load textures)</li>
+<li>Python 2.7 (for the shader compiler)</li>
+</ul>
+<p>Open <code>[project]\Build\gage.sln</code> and build. Press F5 in Visual Studio, or run <code>[project]\Build\Debug\gage.exe</code> or
+<code>[project]\Build\Release\gage.exe</code>. The game will find the project root by searching backwards from the .exe for the
+<code>.git</code> directory.</p>
+<h3>Notes</h3>
+<p>You translate with WASD, and you rotate by mousing with the right mouse button down. You can also use a gamepad if it
+supports XInput. Space will reload shaders, and you can pop the left gamestick to reset the camera. </p>
+<p>Lua is compiled in the engine, and more of the C++ code will be connected to Lua soon.</p>
+<p>The shader generation system is an experiment with using Python as an effect file format, similar to <a href="http://prideout.net/blog/?p=1">Lua as an effect
+file format</a>. The idea is to have a Python file sitting side-by-side the HLSL file,
+where the Python file will specify the technique names, render state, sampler state, and other meta information about the
+HLSL code. For an example, see <code>[project]\Shaders\Mesh.fx</code> and <code>[project]\Shaders\Mesh.py</code>.</p>
+<p>The <code>ShaderCompiler</code> directory contains <code>sc.py</code> and <code>d3dcompiler.py</code>, which drive the shader generation. <code>sc.py</code> will
+import the shader's .py file (e.g. <code>Mesh.py</code>) and look at that module's dictionary to extract the techniques and
+samplers. It then calls <code>fxc.exe</code> to compile the technique's shaders, and writes out the data into a binary <code>.fxo</code>
+file that is loaded by GAGE.</p>
+<p>The <code>.fxo</code> data is relocatable, meaning that the C++ code loads it and patches its pointers in-place. The <code>blob</code> class
+in sc.py manages writing relocatable data; the <code>FixupHeader</code> class in shader.cpp does the corresponding pointer fixup.</p>
+<p>The code in <code>shadercompiler\d3dcompiler.py</code> uses Python's ctypes library to wrap around the D3D11 reflection
+interface. I think that's fragile, especially the code in the Python class ID3D11ShaderReflection, which jumps through
+hoops to call C++ vtable methods. It might be better to write a custom DLL in C++ that wraps around the D3D11 shader
+reflection API rather than have Python do the C++ interop directly. Nevertheless, the current system works in just 591
+lines of Python code.</p>
+<p>There's a simple compute shader based GPU particle system which you can see in the center of the screenshot below.</p>
+<p><img alt="gage sponza" src="/images/IntroGageSponza.jpg" /></p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3 well well-sm" id="sidebar">
+
+<aside>
+    <section>
+        <ul class="list-group list-group-flush">
+                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+                  <ul class="list-group" id="social">
+                    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i
+                            class="fa fa-twitter-square fa-lg"></i> twitter
+                    </a></li>
+                    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i
+                            class="fa fa-github-square fa-lg"></i> github
+                    </a></li>
+                  </ul>
+                </li>
+
+
+
+
+        </ul>
+    </section>
+
+</aside>        </div>
+    </div>
+</div>
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2014 David Farrell
+            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="//code.jquery.com/jquery.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+</body>
+</html>
