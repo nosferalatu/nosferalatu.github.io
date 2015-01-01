@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:og="http://ogp.me/ns#"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
+<head>
+    <title>Shader Generation - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
+    <!-- Open Graph tags -->
+            <meta property="og:type" content="article"/>
+            <meta property="og:title" content="Shader Generation"/>
+            <meta property="og:url" content="/ShaderGeneration.html"/>
+            <meta property="og:description" content="Shader Generation"/>
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+        <link href="/static/custom.css" rel="stylesheet">
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/About.html">
+                             About
+                          </a></li>
+                        <li class="active">
+                            <a href="/category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/ShaderGeneration.html"
+                       rel="bookmark"
+                       title="Permalink to Shader Generation">
+                        Shader Generation
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2014-12-31T12:00:00"> Wed 31 December 2014</time>
+    </span>
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>About a year ago, we decided to rewrite our shader generation system at Double Fine. The new system has been used in Massive Chalice, Costume Quest 2, and our Amnesia Fortnight projects, and has worked out well. Goals of the rewrite were to make the system as data driven as possible, emit correct error line numbers, and make it easier to generate many variants of the same shader.</p>
+<p>I say shader generation because this system manipulates the shader source code but doesn't actually do any compilation itself. It still sends everything through the platform shader compilers, such as D3D's FXC.EXE. (Nevertheless, the tool is actually called ShaderCompiler at Double Fine!)</p>
+<p>At a high level, you write HLSL as you normally would, and also write a small file in Lua to specify the additional information needed for the graphics pipeline. These two files sit side-by-side. We separate the HLSL and Lua code into different files so that text editors can edit the files in either HLSL mode or Lua mode, but you could alternatively embed HLSL as strings in Lua and keep it all in one file.</p>
+<p>To manage ubershaders, the Lua file contains a function called <code>Specialize()</code> that controls how to generate variants of the ubershader. I'll explain more about how that works below.</p>
+<p>Here's a simple example of a shader that outputs a green triangle. The first block is an .fx file and the second is the corresponding .fx.lua file:</p>
+<div class="highlight"><pre><span class="n">float4</span> <span class="n">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="n">vertexid</span> <span class="o">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
+<span class="p">{</span>
+    <span class="n">float4</span> <span class="n">pos</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}</span> <span class="p">};</span>
+    <span class="k">return</span> <span class="n">pos</span><span class="p">[</span><span class="n">vertexid</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="n">float4</span> <span class="n">SimpleShaderPS</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
+</pre></div>
+
+
+<p>Here's a slightly more complex example where we set up render state to turn on alpha blending for the shader. The .fx file is the same, but the .fx.lua has changed:</p>
+<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">AlphaBlendEnable</span> <span class="o">=</span> <span class="kc">true</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">SrcBlend</span> <span class="o">=</span> <span class="n">BlendMode</span><span class="p">.</span><span class="n">SrcAlpha</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">DstBlend</span> <span class="o">=</span> <span class="n">BlendMode</span><span class="p">.</span><span class="n">InvSrcAlpha</span>
+</pre></div>
+
+
+<p>Lua is used only for offline shader generation and not at runtime by the graphics system. Lua was our choice because it is easy to interop with C code, it is malleable and works well as a data definition language, and it was already deeply embedded in our existing C codebase. Lua is trivial to parse (just execute the Lua code!) and you have an expressive programming language at your fingertips. Many other languages, particularly dynamic languages such as Python, have similar properties and would also work well.</p>
+<h3>Shader Specialization</h3>
+<p>First, a few definitions of the terms we'll use below:</p>
+<ul>
+<li><code>shader</code> means a collection of techniques and branches. This is what the game engine uses to associate a mesh with a shader</li>
+<li><code>technique</code> means a vertex/pixel shader pair and render state. The word pipeline can also be used to describe a technique. A shader has 1 or more techniques (actually, 2^N, where N=the number of branches)</li>
+<li><code>branch</code> means a boolean value that is evaluated either statically at shader generation time or dynamically by the GPU at runtime. These appear as global boolean parameters in the HLSL code</li>
+</ul>
+<p>At runtime, the game sets which shader to use and sets the values of the branch booleans. The rendering code then uses the boolean values to select which technique in the shader should be used by the GPU.</p>
+<p>In the example above, the shader code has exactly one technique because it has no branches. Here's an example of a shader that has one branch and outputs either green or blue:</p>
+<div class="highlight"><pre><span class="kt">bool</span> <span class="n">g_bOutputBlue</span><span class="p">;</span>
+
+<span class="n">float4</span> <span class="n">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="n">vertexid</span> <span class="o">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
+<span class="p">{</span>
+    <span class="n">float4</span> <span class="n">pos</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}</span> <span class="p">};</span>
+    <span class="k">return</span> <span class="n">pos</span><span class="p">[</span><span class="n">vertexid</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="n">float4</span> <span class="n">SimpleShaderPS</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">g_bOutputBlue</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+    <span class="k">else</span>
+        <span class="k">return</span> <span class="nf">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;</span><span class="s">g_bOutputBlue&quot;</span> <span class="p">}</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">technique</span> <span class="o">=</span> <span class="n">Technique</span><span class="p">()</span>
+    <span class="n">technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
+    <span class="n">technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
+
+    <span class="k">return</span> <span class="n">technique</span><span class="p">,</span> <span class="n">permutation</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>The <code>Specialize()</code> function returns a Technique, so it can customize the shader entry points, render state, etc. The Technique object can also specify technique-specific macro defines, which are useful to customize a shader for things that can't be toggled with an HLSL if(), such as the list of interpolators. <code>Specialize()</code> also returns a modified set of branch values that are later substituted into the HLSL source code.</p>
+<p>The above .fx has one branch (g_bOutputBlue) and so it has 2^N = 2^1 = 2 different shader variants that are compiled. The first variant is compiled with g_bOutputBlue set to false, and the second variant has g_bOutputBlue set to true. We <em>specialize</em> the .fx shader code by substituting the text <code>g_bOutputBlue</code> for the text <code>true</code> or the text <code>false</code>, depending on which variant we are compiling, before we send that shader variant to the platform shader compiler.</p>
+<p>If we want to evaluate the branch at runtime by the GPU instead of at compile time, all we have to do is remove <code>g_bOutputBlue</code> from the list of branches in the .fx.lua file. The <code>g_bOutputBlue</code> stays with the shader as a global boolean parameter and becomes a runtime branch. This flexibility is useful for experiments to determine if it's worthwhile to trade off memory and more shader program switches for a more specialized shader, or if the cost of shader specialization is too high. It's also good for cross platform code, since different GPUs handle dynamic branching in different ways. The code is also much easier to read than using C preprocessor macros and sprinkling lots of <code>#if LOTS_OF_CPP_DEFINE_TESTING</code> all over the place. It does rely on the platform shader compiler to do deadcode elimination, but that's true of all the compilers I've seen, even when their other optimization passes aren't as solid.</p>
+<h3>Better Shader Specialization</h3>
+<p>The <code>Specialize()</code> function doesn't have to return the same branch values that are passed in. Obviously, 2^N different variants becomes prohibitively expensive. Often, though, shader variants can be combined together, or are mutually exclusive. The <code>Specialize()</code> function in Lua can guide this process and reduce the number of variants from the millions to just a few hundred.</p>
+<p>The important thing to note is that for N boolean branches, we have 2^N permutations of values, each of which are mapped through the specialization function, which returns a technique. We find the unique shaders from that set of techniques and send those to the platform-specific shader compiler.</p>
+<p>Here's an example from Massive Chalice, where we have 14 different branches for our main mesh shader, but fewer actual variants:</p>
+<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">RenderMesh&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;</span><span class="s">g_bBinaryAlpha&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bBloom&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bDebug&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bDepth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bDepthAsColor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bMultiLayer&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bFoliage&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bForwardLighting&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bShadowCast&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bShadowCastDepthAsColor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bShadowRec&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bShadowProjected&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bSkinning&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="s">g_bTransparent&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+    <span class="kd">local</span> <span class="n">specializedtechnique</span> <span class="o">=</span> <span class="n">Technique</span><span class="p">()</span>
+    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshVS&quot;</span>
+    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshPS&quot;</span>
+    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span> <span class="o">=</span> <span class="n">DefaultRenderState</span>
+
+    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bSkinning</span> <span class="k">then</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bFoliage</span> <span class="o">=</span> <span class="kc">false</span>
+    <span class="k">end</span>
+
+    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bFoliage</span> <span class="k">then</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bMultiLayer</span> <span class="o">=</span> <span class="kc">false</span>
+    <span class="k">end</span>
+
+    <span class="c1">-- only RENDERER_DX9 uses DepthAsColor/ShadowCastDepthAsColor. Other platforms use Depth/ShadowCast.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">RENDERER_DX9</span> <span class="k">then</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="o">=</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="o">=</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
+    <span class="k">end</span>
+
+    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="k">then</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshVSDepth&quot;</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshPSDepth&quot;</span>
+
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bBloom</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bMultiLayer</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bForwardLighting</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowRec</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="o">=</span> <span class="kc">false</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="k">then</span>
+            <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ColorWriteState</span> <span class="o">=</span> <span class="n">ColorWriteState</span><span class="p">.</span><span class="n">____</span>
+        <span class="k">end</span>
+    <span class="k">elseif</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="k">then</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshVSDepth&quot;</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshPSDepth&quot;</span>
+
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bBloom</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bMultiLayer</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bForwardLighting</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowRec</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowProjected</span> <span class="o">=</span> <span class="kc">false</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="k">then</span>
+            <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ColorWriteState</span> <span class="o">=</span> <span class="n">ColorWriteState</span><span class="p">.</span><span class="n">____</span>
+        <span class="k">end</span>
+    <span class="k">else</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
+
+        <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="k">then</span>
+            <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span> <span class="o">=</span> <span class="n">AlphaBlendRenderState</span>
+            <span class="n">permutation</span><span class="p">.</span><span class="n">g_bForwardLighting</span> <span class="o">=</span> <span class="kc">true</span>
+        <span class="k">else</span>
+            <span class="n">permutation</span><span class="p">.</span><span class="n">g_bForwardLighting</span> <span class="o">=</span> <span class="kc">false</span>
+        <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bSkinning</span> <span class="k">then</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexFormat</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">kVERTTYPE_Skin_Compact&quot;</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">Defines</span> <span class="o">=</span> <span class="p">{</span> <span class="n">USE_SKINNING</span><span class="o">=</span><span class="mi">1</span> <span class="p">}</span>
+    <span class="k">end</span>
+
+    <span class="k">return</span> <span class="n">specializedtechnique</span><span class="p">,</span> <span class="n">permutation</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>When rendering depth-only passes, such as to shadow maps, we can disable (set to false) many of the shader branches such as <code>g_bBloom</code>, <code>g_bMultiLayer</code>, etc. Similarly, when rendering lit passes, we can disable <code>g_bDepth</code>, <code>g_bShadowCast</code>, etc. When rendering transparent passes, we can enable the forward lighting branch.</p>
+<h3>Data Flow</h3>
+<p>The data flow looks like this: <code>(.fx, .fx.lua)</code> -&gt; <code>ShaderCompiler.exe</code> -&gt; <code>platform shader compiler</code> -&gt; <code>.fxo</code></p>
+<ul>
+<li><code>.fx</code> files are written in standard HLSL</li>
+<li><code>.fx.lua</code> files are written in Lua and specify shader metadata and a specialization function (the .fx and .fx.lua files correspond one-to-one to each other)</li>
+<li><code>ShaderCompiler.exe</code> is the Double Fine shader generator program (it doesn't do any real compiling; it delegates that work to the platform shader compiler)</li>
+<li><code>Platform shader compiler</code> is whatever shader compiler is used for the target platform, such as FXC.EXE for Windows</li>
+<li><code>.fxo</code> files are loaded by the game</li>
+</ul>
+<p>ShaderCompiler.exe proceeds in this order:</p>
+<ul>
+<li>Run the C preprocessor over the HLSL code; put the #define macros into a Lua table</li>
+<li>For each shader declared in the .fx.lua file:<ul>
+<li>Call Specialize() for each of the 2^N permutations to get all the techniques</li>
+<li>Find the unique set of vertex and pixel shaders in those techniques</li>
+<li>For each vertex/pixel shader:<ul>
+<li>Substitute the technique's branch values into the HLSL code</li>
+<li>Run the C preprocessor over the specialized HLSL code to substitute the technique's macro defines into the code</li>
+<li>Call the platform shader compiler on the specialized, preprocessed code</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Gather the results and package everything into a .fxo file</li>
+</ul>
+<h3>Runtime</h3>
+<p>At runtime, we set the branch values as booleans in a constant buffer: </p>
+<div class="highlight"><pre><span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">SetShaderBool</span><span class="p">(</span><span class="n">g_bShadowCast</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+<span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">SetShaderBool</span><span class="p">(</span><span class="n">g_bSkinning</span><span class="p">,</span> <span class="n">mesh</span><span class="o">-&gt;</span><span class="n">has_skinning_data</span><span class="p">());</span>
+<span class="p">...</span>
+</pre></div>
+
+
+<p>Then we set the shader and draw:</p>
+<div class="highlight"><pre><span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">SetShader</span><span class="p">(</span><span class="n">MeshShader</span><span class="p">);</span>
+<span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">Draw</span><span class="p">(</span><span class="n">mesh</span><span class="p">);</span>
+</pre></div>
+
+
+<p>When we draw a mesh, we use the state of the boolean branch values to construct an index into an array of techniques for that shader. Each branch gets one bit in the index. The techniques can be stored as an array for fast lookup but at the cost of more memory, or you can put the techniques into a hash table where the key=index and value=technique, or whatever scheme you want. We look up that technique, set its render state, its shaders, and finally issue the draw calls for the mesh.</p>
+<h3>Validating Lua</h3>
+<p>Although Lua is easy to use to define data, it is dynamically typed, so it's best to do some extra work to enforce that tables contain only valid values. For example, we want the Shader.Technique.RenderState table to only contain fields for render state that we support. When you assign a value to one of the entries in the table, we make sure that value is valid (so you can only assign true/false to AlphaBlendEnable, and not assign true/false to AlphaBlendFunc).</p>
+<p>We can use Lua's metatables to manage access to the table. Here's some code to create read-only enums:</p>
+<div class="highlight"><pre><span class="c1">-- Redefine pairs() and ipairs() to call the metatable&#39;s __pairs/__ipairs function, if they exist</span>
+<span class="c1">-- By default, pairs/ipairs will not call the metatable&#39;s __index field, which doesn&#39;t work with</span>
+<span class="c1">-- our controlled-access tables.</span>
+<span class="n">rawpairs</span><span class="p">,</span> <span class="n">rawipairs</span> <span class="o">=</span> <span class="nb">pairs</span><span class="p">,</span> <span class="nb">ipairs</span>
+<span class="k">function</span> <span class="nf">pairs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__pairs</span> <span class="ow">or</span> <span class="n">rawpairs</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="k">end</span>
+<span class="k">function</span> <span class="nf">ipairs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__ipairs</span> <span class="ow">or</span> <span class="n">rawipairs</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="k">end</span>
+
+<span class="c1">-- Return a read-only enum. Keys can be read, but neither created nor changed.</span>
+<span class="c1">-- The input should be a table of strings, one for each enum type.</span>
+<span class="k">function</span> <span class="nf">ReadOnlyEnum</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="k">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="k">do</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">~=</span> <span class="s2">&quot;</span><span class="s">string&quot;</span> <span class="k">then</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">Enum entries must be strings&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">end</span> <span class="k">end</span>
+
+    <span class="kd">local</span> <span class="n">__table</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="k">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="k">do</span> <span class="n">__table</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span> <span class="k">end</span>
+
+    <span class="kd">local</span> <span class="n">newtable_mt</span> <span class="o">=</span> <span class="p">{</span>
+       <span class="n">__newindex</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">Attempt to modify an enum&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">end</span><span class="p">,</span>
+       <span class="n">__index</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">~=</span> <span class="kc">nil</span> <span class="k">then</span> <span class="k">return</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                               <span class="k">else</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">Unknown enum value &#39;&quot;</span> <span class="o">..</span> <span class="nb">tostring</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">..</span> <span class="s2">&quot;</span><span class="s">&#39;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">end</span> <span class="k">end</span><span class="p">,</span>
+       <span class="n">__pairs</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="nb">pairs</span><span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">)</span> <span class="k">end</span><span class="p">,</span>
+       <span class="n">__ipairs</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="nb">ipairs</span><span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">)</span> <span class="k">end</span><span class="p">,</span>
+       <span class="n">__table</span> <span class="o">=</span> <span class="n">__table</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="nb">setmetatable</span><span class="p">({},</span> <span class="n">newtable_mt</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>We can use the above code to set up some enums like this:</p>
+<div class="highlight"><pre><span class="n">FillMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Solid&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Wireframe&quot;</span><span class="p">}</span>
+<span class="n">CullMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">CW&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">CCW&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">None&quot;</span><span class="p">}</span>
+<span class="n">ComparisonFunc</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Never&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Less&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Equal&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">LEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Greater&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">NotEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">GEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Always&quot;</span><span class="p">}</span>
+</pre></div>
+
+
+<p>And then we can use these enums as you'd expect in the .fx.lua like this:</p>
+<div class="highlight"><pre><span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">FillMode</span><span class="p">.</span><span class="n">Solid</span>
+<span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">CullMode</span> <span class="o">=</span> <span class="n">CullMode</span><span class="p">.</span><span class="n">CW</span>
+<span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ZFunc</span> <span class="o">=</span> <span class="n">ComparisonFunc</span><span class="p">.</span><span class="n">LEqual</span>
+</pre></div>
+
+
+<p>And when we try to assign something incorrectly, we get an informative error message:</p>
+<div class="highlight"><pre>technique.RenderState.CullMode = CullMode.SomethingElse        -- this is line 35
+
+lua: enum.lua:35: Unknown enum value &#39;SomethingElse&#39;
+stack traceback:
+    [C]: in function &#39;error&#39;
+    enum.lua:19: in function &lt;enum.lua:18&gt;
+    enum.lua:35: in main chunk
+    [C]: ?
+</pre></div>
+
+
+<p>We could have validated the data in C when we retrieved the values from the technique.RenderState table, but there's no way to get the line number of where that value came from in Lua. With the above code, errors are caught immediately in Lua, and we can use the Lua <code>error()</code> function to tell Lua where the error occurred.</p>
+<h3>C Preprocessor</h3>
+<p>We use <a href="http://mcpp.sourceforge.net/">mcpp</a> to preprocess the shaders. You can read more about mcpp at that page. We put the macro definitions into a Lua table so that the same constants used in the .fx files can be used in the .fx.lua file. There are no duplicated constants between the HLSL and Lua code, and we don't have to do something unorthodox like run the C preprocessor over the Lua files.</p>
+<p>The problem, though, is that we want to know the values of the macro defines <em>after</em> they have been preprocessed. For example, given <code>#define MACRO_A 1</code> and <code>#define MACRO_B MACRO_A</code>, we want to set MACRO_A to 1 and MACRO_B to 1. mcpp makes these easy with its <code>put_defines</code> pragma, which outputs the macro definitions at that point in the file.</p>
+<p>When we run <code>mcpp.exe -z -j -P ShaderCommon.h</code> with <code>#pragma mcpp put_defines</code> at the end of the file, we get output like this:</p>
+<div class="highlight"><pre><span class="cm">/* Currently defined macros. */</span>
+<span class="p">#</span><span class="n">define</span> <span class="n">kIMAGE_PROCESS_STENCIL_BIT</span> <span class="mh">128</span>  <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */</span>
+<span class="p">#</span><span class="n">define</span> <span class="n">kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT</span> <span class="mh">96</span>      <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */</span>
+<span class="p">#</span><span class="n">define</span> <span class="n">kDEFAULT_MIN_TEXTURE_ALPHA</span> <span class="p">(</span><span class="mf">1.f</span><span class="p">)</span>        <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:132    */</span>
+<span class="p">#</span><span class="n">define</span> <span class="n">kPROJECT_LIGHT_STENCIL_BIT</span> <span class="mh">64</span>   <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:115    */</span>
+<span class="p">#</span><span class="n">define</span> <span class="n">kSHADOW_RECEIVER_STENCIL_BIT</span> <span class="mh">128</span>        <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:124    */</span>
+<span class="p">...</span>
+</pre></div>
+
+
+<p>We parse the above #define's into key/value pairs and put them into a Lua table named cpp:</p>
+<div class="highlight"><pre><span class="n">cpp</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">function</span> <span class="nf">rtrim</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span><span class="n">gsub</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">%s*$&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">&quot;</span><span class="p">))</span> <span class="k">end</span>
+<span class="k">function</span> <span class="nf">RegisterMacros</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="k">in</span> <span class="nb">string.gmatch</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">([^</span><span class="se">\n</span><span class="s">]+)&quot;</span><span class="p">)</span> <span class="k">do</span>
+        <span class="kd">local</span> <span class="n">name</span><span class="p">,</span><span class="n">value</span> <span class="o">=</span> <span class="nb">string.match</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">^#define (%S+) (.+)%s+/%*&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="k">then</span> <span class="n">cpp</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">rtrim</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">end</span>
+    <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+
+<p>Now we can use them anywhere in the .fx.lua files:</p>
+<div class="highlight"><pre><span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilEnable</span> <span class="o">=</span> <span class="kc">true</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilRef</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;</span><span class="s">kDYNAMIC_MESH_STENCIL_BIT&quot;</span><span class="p">])</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilWriteMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;</span><span class="s">kPROJECT_LIGHT_STENCIL_BIT&quot;</span><span class="p">])</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilFunc</span> <span class="o">=</span> <span class="n">ComparisonFunc</span><span class="p">.</span><span class="n">Equal</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilPass</span> <span class="o">=</span> <span class="n">Stencil</span><span class="p">.</span><span class="n">Invert</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilFail</span> <span class="o">=</span> <span class="n">Stencil</span><span class="p">.</span><span class="n">Keep</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilZFail</span> <span class="o">=</span> <span class="n">Stencil</span><span class="p">.</span><span class="n">Keep</span>
+</pre></div>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3 well well-sm" id="sidebar">
+
+<aside>
+    <section>
+        <ul class="list-group list-group-flush">
+                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+                  <ul class="list-group" id="social">
+                    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i
+                            class="fa fa-twitter-square fa-lg"></i> twitter
+                    </a></li>
+                    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i
+                            class="fa fa-github-square fa-lg"></i> github
+                    </a></li>
+                  </ul>
+                </li>
+
+
+
+
+        </ul>
+    </section>
+
+</aside>        </div>
+    </div>
+</div>
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2014 David Farrell
+            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="//code.jquery.com/jquery.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+</body>
+</html>
