@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:og="http://ogp.me/ns#"
+      xmlns:fb="https://www.facebook.com/2008/fbml">
+<head>
+    <title>Projects - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
+    <!-- Open Graph tags -->
+            <meta property="og:type" content="article"/>
+            <meta property="og:title" content="Projects"/>
+            <meta property="og:url" content="/pages/Projects.html"/>
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+        <link href="/static/custom.css" rel="stylesheet">
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/About.html">
+                             About
+                          </a></li>
+                         <li class="active"><a href="/pages/Projects.html">
+                             Projects
+                          </a></li>
+                        <li >
+                            <a href="/category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+
+    <section id="content" class="body">
+        <h1 class="entry-title">Projects</h1>
+        
+        <div class="entry-content">
+            <p>These are some things I've worked on over the years:</p>
+<h3>Massive Chalice (Double Fine / 2015 / Windows, XBox One)</h3>
+<p>Massive Chalice was a Kickstarter funded game. I contributed to the graphics and systems software, particularly the Windows and XBox One support. The game shipped on XBox One at 60 Hz at 1600x900 using a deferred renderer similar to Costume Quest 2's. </p>
+<p><img alt="test image" src="/images/massivechalice1.jpg" /></p>
+<p><img alt="test image" src="/images/massivechalice2.jpg" /></p>
+<p><img alt="test image" src="/images/massivechalice3.jpg" /></p>
+<h3>Costume Quest 2 (Double Fine / 2014 / Windows, OSX, Linux, PS4, XBox One, WiiU, PS3, XB360)</h3>
+<p>Costume Quest 2 shipped simultaneously on eight platforms. Much of the engineering schedule was devoted on platform work, but we were able to add a few nice features, such as deferred rendering using tiled lighting, where the light/tile intersections were found using <a href="http://jcgt.org/published/0002/02/05/">the projection of a sphere</a>. I wrote a bit about the deferred renderer on my blog.</p>
+<p><img alt="test image" src="/images/costumequest2_1.jpg" /></p>
+<p><img alt="test image" src="/images/costumequest2_2.jpg" /></p>
+<p><img alt="test image" src="/images/costumequest2_3.jpg" /></p>
+<h3>My Alien Buddy (Double Fine and Japan Studios / PS4 / 2013)</h3>
+<p>Double Fine worked with Japan Studios in Tokyo to create this augmented reality experience. We contributed one room to The Playroom, which ships with every PS4. This project had many challenges; it was our first experience with the PS4, we were using Sony's engine, and we were working with a team many time zones away in Tokyo. The engine was particularly challenging for me as the sole programmer on the project, because although the code itself was in English, the comments were in Japanese (and I do not know Japanese). Nevertheless, in four months we developed many prototypes, made a simple level editor out of Unity which exported into Sony's engine, integrated Lua, added some rendering features such as instancing, and developed a mass/spring simulation for the alien's squishy skin.</p>
+<p><img alt="test image" src="/images/myalienbuddy1.jpg" /></p>
+<p><img alt="test image" src="/images/myalienbuddy2.jpg" /></p>
+<p><img alt="test image" src="/images/myalienbuddy3.png" /></p>
+<h3>Steed (Double Fine / 2014 / Amnesia Fornight Prototype)</h3>
+<p>I was the lead programmer on this two week project and wrote the grass simulation and rendering. This heavily used geometry instancing and noise to randomly distribute and animate the grass blades. I switched the renderer from forward rendering to a deferred system to help deal with the overdraw, and developed a dynamic heightmap that the horse would render into so that you could leave trails in the grass.</p>
+<p><img alt="test image" src="/images/steed1.png" /></p>
+<p><img alt="test image" src="/images/steed2.jpg" /></p>
+<p><img alt="test image" src="/images/steed3.jpg" /></p>
+<h3>The Cave (Double Fine / 2012 / Windows, WiiU, PS3, XB360)</h3>
+<p>My primary contribution to The Cave was working on the Windows and WiiU SKUs of the game.</p>
+<p><img alt="test image" src="/images/thecave1.png" /></p>
+<p><img alt="test image" src="/images/thecave2.png" /></p>
+<p><img alt="test image" src="/images/thecave3.png" /></p>
+<h3>Black Lake (Double Fine / 2012 / Amnesia Fortnight Prototype)</h3>
+<p>For this two week Amnesia Fortnight prototype, I changed the Double Fine's hybrid forward/deferred renderer to correctly handle diffuse and specular color (and gamma correct, at that). This allowed the player to carry a lantern which illuminated a dark forest. I also wrote a system to procedurally animate thorns winding out of the ground, although in hindsight, the time constraints of the project were too short to fully develop that system.</p>
+<p><img alt="test image" src="/images/blacklake1.jpg" /></p>
+<p><img alt="test image" src="/images/blacklake2.jpg" /></p>
+<p><img alt="test image" src="/images/blacklake3.jpg" /></p>
+<h3>PC Ports (Brutal Legend, Stacking, Iron Brigade, Costume Quest) (Double Fine / 2011-2012)</h3>
+<p>I ported several of Double Fine's back catalog of PS3/XB360 games to Windows and Steam. I used my knowledge of those consoles to adapt the Buddha engine to DX9 and Windows. Brutal Legend was enhanced to run at 60 Hz. \m/ </p>
+<p><img alt="test image" src="/images/brutallegend1.jpg" /></p>
+<p><img alt="test image" src="/images/brutallegend2.jpg" /></p>
+<p><img alt="test image" src="/images/brutallegend3.jpg" /></p>
+<h3>Kinect Party (Double Fine / 2012 / XB360)</h3>
+<p>I did a lot of optimization work to Kinect Party and a few shaders here and there. I wrote a dynamic heightmap simulation that ran on the XB360's GPU for the Bath Tub activity. The players' positions from the Kinect would intersect with the heightmap, causing ripples and waves in the water sim. I also added instancing, which was very useful in the Castle Builder and Voxel Runner activities.</p>
+<p><img alt="test image" src="/images/kinectparty-bath.png" /></p>
+<p><img alt="test image" src="/images/kinectparty-castle.jpeg" /></p>
+<p><img alt="test image" src="/images/kinectparty-voxelrunner.jpg" /></p>
+<h3>Zombie Apocalypse (Nihilistic Software / 2009 / PS3, XB360)</h3>
+<p>This game reused the Conan engine and was a lot of fun. The biggest rendering feature of this game was the blood splatter on the ground, which we made by projecting particles into a deferred decal buffer.</p>
+<p><img alt="test image" src="/images/zombieapocalypse-1.jpg" /></p>
+<p><img alt="test image" src="/images/zombieapocalypse-2.jpg" /></p>
+<p><img alt="test image" src="/images/zombieapocalypse-3.jpg" /></p>
+<h3>Conan (Nihilistic Software / 2007 / PS3, XB360)</h3>
+<p>Conan was Nihilistic's first PS3 and XB360 game. I played a core role in the team that wrote a new PS3/360 renderer for Nihilistic's engine, including a data driven shader pipeline, dynamic lighting, and an SPU job system. After Conan shipped, we refined the renderer to use the Cell's SPU's for a variety of work, such as deferred lighting (where the Cell would do the lighting and the RSX would do the shadow mapping) and geometry processing.</p>
+<p>I reverse engineered and did unspeakable things to RSX fragment shader microcode in this project. </p>
+<p><img alt="test image" src="/images/conan1.jpg" /></p>
+<p><img alt="test image" src="/images/conan2.jpg" /></p>
+<p><img alt="test image" src="/images/conan3.jpg" /></p>
+<h3>Demon Stone (Stormfront Studios / 2004 / PS2)</h3>
+<p>Demon Stone refined the PS2 engine developed for The Two Towers. I continued to write a lot of VU1 code, and implemented a neat notation to pack vertex data into various formats for the VIF/VU1 to unpack. I implemented compressed textures on the PS2 for this project by separating the high frequency luminance from the low frequency color and using the PS2's fast GS to blend them together.</p>
+<p><img alt="test image" src="/images/demonstone0.jpg" /></p>
+<p><img alt="test image" src="/images/demonstone1.jpg" /></p>
+<p><img alt="test image" src="/images/demonstone2.jpg" /></p>
+<h3>Lord of the Rings: The Two Towers (Stormfront Studios / 2001 / PS2)</h3>
+<p>Looking back, we packed a lot of game into a PS2. Most challenging was the Battle of Helm's Deep at the end of the game, where up to 20 skinned characters were visible at a time, including their shadows. I was particulary happy with the shadows at the time, as they were implemented using a stencil shadow technique, even though the PS2 had no stencil hardware (but it could blend in add/subtract modes to a single color channel, which was enough). The silhouette edges of the shadows were computed on the VU0 which were then passed through the CPU to the VU1.</p>
+<p>I wrote the VU1 microcode that performed the world and skinned character rendering. This included variants to do six plane clipping in VU1 code. I also wrote a high performance animation system using the CPU and VU0 running in parallel. The CPU would fetch data for the next bone from memory, and in parallel, the VU0 would calculate the previous bone's matrices.</p>
+<p><img alt="test image" src="/images/lotr0.jpg" /></p>
+<p><img alt="test image" src="/images/lotr1.jpg" /></p>
+<p><img alt="test image" src="/images/lotr2.jpg" /></p>
+<h3>Rendition</h3>
+<p>A long time ago I worked at Rendition in their DirectX driver group. I learned a great deal about how to debug software and about how hardware works. </p>
+<p><img alt="test image" src="/images/v2200agp_fhq.jpg" /></p>
+<p><img alt="test image" src="/images/verite2100.jpg" /></p>
+<h3>Any Channel</h3>
+<p>My first game dev job. I moved to California and started writing games. Any Channel had their own proprietary, first person, software rendered game engine.</p>
+<p><img alt="test image" src="/images/any_channel.jpg" /></p>
+<p><img alt="test image" src="/images/vigilance1.JPG" /></p>
+        </div>
+    </section>
+        </div>
+        <div class="col-sm-3 well well-sm" id="sidebar">
+
+<aside>
+    <section>
+        <ul class="list-group list-group-flush">
+                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+                  <ul class="list-group" id="social">
+                    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i
+                            class="fa fa-twitter-square fa-lg"></i> twitter
+                    </a></li>
+                    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i
+                            class="fa fa-github-square fa-lg"></i> github
+                    </a></li>
+                  </ul>
+                </li>
+
+
+
+
+        </ul>
+    </section>
+
+</aside>        </div>
+    </div>
+</div>
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2014 David Farrell
+            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="//code.jquery.com/jquery.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+</body>
+</html>
