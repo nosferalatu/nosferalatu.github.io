@@ -1,5 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0"><channel><title>Nosferalatu</title><link>/</link><description></description><lastBuildDate>Wed, 31 Dec 2014 12:00:00 -0800</lastBuildDate><item><title>Shader Generation</title><link>/ShaderGeneration.html</link><description>&lt;p&gt;About a year ago, we decided to rewrite our shader generation system at Double Fine. The new system has been used in Massive Chalice, Costume Quest 2, and our Amnesia Fortnight projects, and has worked out well. Goals of the rewrite were to make the system as data driven as possible, emit correct error line numbers, and make it easier to generate many variants of the same shader.&lt;/p&gt;
+<rss version="2.0"><channel><title>Nosferalatu</title><link>/</link><description></description><lastBuildDate>Sun, 27 Nov 2016 12:00:00 -0800</lastBuildDate><item><title>Pelican and Math Equations</title><link>/Pelican.html</link><description>&lt;p&gt;This blog uses the static site generator &lt;a href="http://www.getpelican.com"&gt;Pelican&lt;/a&gt;. Here's how you can set up Pelican to
+render LaTeX math equations.&lt;/p&gt;
+&lt;p&gt;In your Pelican content directory (mine is &lt;code&gt;c:\blog\source&lt;/code&gt;), clone the &lt;a href="https://github.com/getpelican/pelican-plugins"&gt;Pelican plugins
+repository&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;cd c:\blog\source
+git submodule add https://github.com/getpelican/pelican-plugins.git plugins
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then modify your pelicanconf.py file to point at the path to the plugins and then which plugins you want to
+use:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;PLUGIN_PATHS=[&amp;#39;./plugins&amp;#39;]
+PLUGINS = [&amp;#39;render_math&amp;#39;]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;a href="https://github.com/getpelican/pelican-plugins/tree/master/render_math"&gt;render_math&lt;/a&gt; is a Pelican plugin for rendering
+LaTeX. That plugin extends Markdown so that anything in between &lt;code&gt;$...$&lt;/code&gt; is rendered as math. For example:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$x^2$&lt;/code&gt; becomes &lt;span class="math"&gt;\(x^2\)&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$e=mc^2$&lt;/code&gt; becomes &lt;span class="math"&gt;\(e=mc^2\)&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;$\left| \nabla \phi \right| = 1$&lt;/code&gt; becomes &lt;span class="math"&gt;\(\left| \nabla \phi \right| = 1\)&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;You can also use &lt;code&gt;$$...$$&lt;/code&gt; to put the equation in a new paragraph, like this: &lt;/p&gt;
+&lt;div class="math"&gt;$$\dfrac {\partial \phi } {\partial t} + u \cdot \nabla \phi = 1$$&lt;/div&gt;
+&lt;h1&gt;E-Z LaTeX&lt;/h1&gt;
+&lt;p&gt;I don't know LaTeX, but there are apps that will convert handwritten equations to LaTeX. I've been using an app called
+MyScript that works well. They have a web demo here: &lt;a href="http://webdemo.myscript.com/views/math.html"&gt;http://webdemo.myscript.com/views/math.html&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;With that, I can scribble some equations, and then cut and paste the LaTeX into Markdown, and easily create nice looking
+equations.&lt;/p&gt;
+&lt;script type="text/javascript"&gt;if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width &lt; 768) ? "left" : align;
+        indent = (screen.width &lt; 768) ? "0em" : indent;
+        linebreak = (screen.width &lt; 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    var location_protocol = (false) ? 'https' : document.location.protocol;
+    if (location_protocol !== 'http' &amp;&amp; location_protocol !== 'https') location_protocol = 'https:';
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = location_protocol + '//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+    mathjaxscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+&lt;/script&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">David Farrell</dc:creator><pubDate>Sun, 27 Nov 2016 12:00:00 -0800</pubDate><guid isPermaLink="false">tag:,2016-11-27:Pelican.html</guid><category>Blog</category></item><item><title>Shader Generation</title><link>/ShaderGeneration.html</link><description>&lt;p&gt;About a year ago, we decided to rewrite our shader generation system at Double Fine. The new system has been used in Massive Chalice, Costume Quest 2, and our Amnesia Fortnight projects, and has worked out well. Goals of the rewrite were to make the system as data driven as possible, emit correct error line numbers, and make it easier to generate many variants of the same shader.&lt;/p&gt;
 &lt;p&gt;I say shader generation because this system manipulates the shader source code but doesn't actually do any compilation itself. It still sends everything through the platform shader compilers, such as D3D's FXC.EXE. (Nevertheless, the tool is actually called ShaderCompiler at Double Fine!)&lt;/p&gt;
 &lt;p&gt;At a high level, you write HLSL as you normally would, and also write a small file in Lua to specify the additional information needed for the graphics pipeline. These two files sit side-by-side. We separate the HLSL and Lua code into different files so that text editors can edit the files in either HLSL mode or Lua mode, but you could alternatively embed HLSL as strings in Lua and keep it all in one file.&lt;/p&gt;
 &lt;p&gt;To manage ubershaders, the Lua file contains a function called &lt;code&gt;Specialize()&lt;/code&gt; that controls how to generate variants of the ubershader. I'll explain more about how that works below.&lt;/p&gt;
