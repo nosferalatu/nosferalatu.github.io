@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"><channel><title>Nosferalatu</title><link>/</link><description></description><lastBuildDate>Wed, 31 Dec 2014 12:00:00 -0800</lastBuildDate><item><title>Shader Generation</title><link>/ShaderGeneration.html</link><description>&lt;p&gt;About a year ago, we decided to rewrite our shader generation system at Double Fine. The new system has been used in Massive Chalice, Costume Quest 2, and our Amnesia Fortnight projects, and has worked out well. Goals of the rewrite were to make the system as data driven as possible, emit correct error line numbers, and make it easier to generate many variants of the same shader.&lt;/p&gt;
+&lt;p&gt;I say shader generation because this system manipulates the shader source code but doesn't actually do any compilation itself. It still sends everything through the platform shader compilers, such as D3D's FXC.EXE. (Nevertheless, the tool is actually called ShaderCompiler at Double Fine!)&lt;/p&gt;
+&lt;p&gt;At a high level, you write HLSL as you normally would, and also write a small file in Lua to specify the additional information needed for the graphics pipeline. These two files sit side-by-side. We separate the HLSL and Lua code into different files so that text editors can edit the files in either HLSL mode or Lua mode, but you could alternatively embed HLSL as strings in Lua and keep it all in one file.&lt;/p&gt;
+&lt;p&gt;To manage ubershaders, the Lua file contains a function called &lt;code&gt;Specialize()&lt;/code&gt; that controls how to generate variants of the ubershader. I'll explain more about how that works below.&lt;/p&gt;
+&lt;p&gt;Here's a simple example of a shader that outputs a green triangle. The first block is an .fx file and the second is the corresponding .fx.lua file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;float4&lt;/span&gt; &lt;span class="nf"&gt;SimpleShaderVS&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nl"&gt;vertexid&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;SV_VERTEXID&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;SV_POSITION&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;pos&lt;/span&gt;&lt;span class="p"&gt;[]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="p"&gt;};&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;pos&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;vertexid&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="n"&gt;float4&lt;/span&gt; &lt;span class="nf"&gt;SimpleShaderPS&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;shader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Shader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;MyNewSimpleShader&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;SimpleShaderVS&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PixelShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;SimpleShaderPS&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here's a slightly more complex example where we set up render state to turn on alpha blending for the shader. The .fx file is the same, but the .fx.lua has changed:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;shader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Shader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;MyNewSimpleShader&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;SimpleShaderVS&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PixelShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;SimpleShaderPS&amp;quot;&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AlphaBlendEnable&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SrcBlend&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BlendMode&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SrcAlpha&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;DstBlend&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BlendMode&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;InvSrcAlpha&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Lua is used only for offline shader generation and not at runtime by the graphics system. Lua was our choice because it is easy to interop with C code, it is malleable and works well as a data definition language, and it was already deeply embedded in our existing C codebase. Lua is trivial to parse (just execute the Lua code!) and you have an expressive programming language at your fingertips. Many other languages, particularly dynamic languages such as Python, have similar properties and would also work well.&lt;/p&gt;
+&lt;h3&gt;Shader Specialization&lt;/h3&gt;
+&lt;p&gt;First, a few definitions of the terms we'll use below:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;shader&lt;/code&gt; means a collection of techniques and branches. This is what the game engine uses to associate a mesh with a shader&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;technique&lt;/code&gt; means a vertex/pixel shader pair and render state. The word pipeline can also be used to describe a technique. A shader has 1 or more techniques (actually, 2^N, where N=the number of branches)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;branch&lt;/code&gt; means a boolean value that is evaluated either statically at shader generation time or dynamically by the GPU at runtime. These appear as global boolean parameters in the HLSL code&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;At runtime, the game sets which shader to use and sets the values of the branch booleans. The rendering code then uses the boolean values to select which technique in the shader should be used by the GPU.&lt;/p&gt;
+&lt;p&gt;In the example above, the shader code has exactly one technique because it has no branches. Here's an example of a shader that has one branch and outputs either green or blue:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kt"&gt;bool&lt;/span&gt; &lt;span class="n"&gt;g_bOutputBlue&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+&lt;span class="n"&gt;float4&lt;/span&gt; &lt;span class="nf"&gt;SimpleShaderVS&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nl"&gt;vertexid&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;SV_VERTEXID&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;SV_POSITION&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;pos&lt;/span&gt;&lt;span class="p"&gt;[]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="p"&gt;};&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;pos&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;vertexid&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="n"&gt;float4&lt;/span&gt; &lt;span class="nf"&gt;SimpleShaderPS&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;g_bOutputBlue&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;shader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Shader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;MyNewSimpleShader&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Branches&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bOutputBlue&amp;quot;&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Specialize&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;technique&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;SimpleShaderVS&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PixelShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;SimpleShaderPS&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;technique&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The &lt;code&gt;Specialize()&lt;/code&gt; function returns a Technique, so it can customize the shader entry points, render state, etc. The Technique object can also specify technique-specific macro defines, which are useful to customize a shader for things that can't be toggled with an HLSL if(), such as the list of interpolators. &lt;code&gt;Specialize()&lt;/code&gt; also returns a modified set of branch values that are later substituted into the HLSL source code.&lt;/p&gt;
+&lt;p&gt;The above .fx has one branch (g_bOutputBlue) and so it has 2^N = 2^1 = 2 different shader variants that are compiled. The first variant is compiled with g_bOutputBlue set to false, and the second variant has g_bOutputBlue set to true. We &lt;em&gt;specialize&lt;/em&gt; the .fx shader code by substituting the text &lt;code&gt;g_bOutputBlue&lt;/code&gt; for the text &lt;code&gt;true&lt;/code&gt; or the text &lt;code&gt;false&lt;/code&gt;, depending on which variant we are compiling, before we send that shader variant to the platform shader compiler.&lt;/p&gt;
+&lt;p&gt;If we want to evaluate the branch at runtime by the GPU instead of at compile time, all we have to do is remove &lt;code&gt;g_bOutputBlue&lt;/code&gt; from the list of branches in the .fx.lua file. The &lt;code&gt;g_bOutputBlue&lt;/code&gt; stays with the shader as a global boolean parameter and becomes a runtime branch. This flexibility is useful for experiments to determine if it's worthwhile to trade off memory and more shader program switches for a more specialized shader, or if the cost of shader specialization is too high. It's also good for cross platform code, since different GPUs handle dynamic branching in different ways. The code is also much easier to read than using C preprocessor macros and sprinkling lots of &lt;code&gt;#if LOTS_OF_CPP_DEFINE_TESTING&lt;/code&gt; all over the place. It does rely on the platform shader compiler to do deadcode elimination, but that's true of all the compilers I've seen, even when their other optimization passes aren't as solid.&lt;/p&gt;
+&lt;h3&gt;Better Shader Specialization&lt;/h3&gt;
+&lt;p&gt;The &lt;code&gt;Specialize()&lt;/code&gt; function doesn't have to return the same branch values that are passed in. Obviously, 2^N different variants becomes prohibitively expensive. Often, though, shader variants can be combined together, or are mutually exclusive. The &lt;code&gt;Specialize()&lt;/code&gt; function in Lua can guide this process and reduce the number of variants from the millions to just a few hundred.&lt;/p&gt;
+&lt;p&gt;The important thing to note is that for N boolean branches, we have 2^N permutations of values, each of which are mapped through the specialization function, which returns a technique. We find the unique shaders from that set of techniques and send those to the platform-specific shader compiler.&lt;/p&gt;
+&lt;p&gt;Here's an example from Massive Chalice, where we have 14 different branches for our main mesh shader, but fewer actual variants:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;shader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Shader&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMesh&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Branches&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bBinaryAlpha&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bBloom&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bDebug&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bDepth&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bDepthAsColor&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bMultiLayer&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bFoliage&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bForwardLighting&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bShadowCast&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bShadowCastDepthAsColor&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bShadowRec&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bShadowProjected&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bSkinning&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;g_bTransparent&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Specialize&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;specializedtechnique&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+    &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMeshVS&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PixelShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMeshPS&amp;quot;&lt;/span&gt;
+    &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;DefaultRenderState&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bSkinning&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bFoliage&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bFoliage&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bMultiLayer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="c1"&gt;-- only RENDERER_DX9 uses DepthAsColor/ShadowCastDepthAsColor. Other platforms use Depth/ShadowCast.&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;RENDERER_DX9&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepth&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepthAsColor&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepthAsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCast&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCast&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCastDepthAsColor&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCastDepthAsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepth&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepthAsColor&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+        &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMeshVSDepth&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PixelShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMeshPSDepth&amp;quot;&lt;/span&gt;
+
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCast&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCastDepthAsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bBloom&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bMultiLayer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bForwardLighting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowRec&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bTransparent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepthAsColor&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+            &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ColorWriteState&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ColorWriteState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;____&lt;/span&gt;
+        &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;elseif&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCast&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCastDepthAsColor&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+        &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMeshVSDepth&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;PixelShader&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;RenderMeshPSDepth&amp;quot;&lt;/span&gt;
+
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepthAsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bBloom&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bMultiLayer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bForwardLighting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowRec&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bTransparent&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowProjected&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="ow"&gt;not&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCastDepthAsColor&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+            &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ColorWriteState&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ColorWriteState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;____&lt;/span&gt;
+        &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCast&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bShadowCastDepthAsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bDepthAsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bTransparent&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+            &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;AlphaBlendRenderState&lt;/span&gt;
+            &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bForwardLighting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;
+        &lt;span class="k"&gt;else&lt;/span&gt;
+            &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bForwardLighting&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+        &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;g_bSkinning&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt;
+        &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;VertexFormat&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;kVERTTYPE_Skin_Compact&amp;quot;&lt;/span&gt;
+        &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Defines&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;USE_SKINNING&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;specializedtechnique&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;permutation&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When rendering depth-only passes, such as to shadow maps, we can disable (set to false) many of the shader branches such as &lt;code&gt;g_bBloom&lt;/code&gt;, &lt;code&gt;g_bMultiLayer&lt;/code&gt;, etc. Similarly, when rendering lit passes, we can disable &lt;code&gt;g_bDepth&lt;/code&gt;, &lt;code&gt;g_bShadowCast&lt;/code&gt;, etc. When rendering transparent passes, we can enable the forward lighting branch.&lt;/p&gt;
+&lt;h3&gt;Data Flow&lt;/h3&gt;
+&lt;p&gt;The data flow looks like this: &lt;code&gt;(.fx, .fx.lua)&lt;/code&gt; -&amp;gt; &lt;code&gt;ShaderCompiler.exe&lt;/code&gt; -&amp;gt; &lt;code&gt;platform shader compiler&lt;/code&gt; -&amp;gt; &lt;code&gt;.fxo&lt;/code&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;.fx&lt;/code&gt; files are written in standard HLSL&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.fx.lua&lt;/code&gt; files are written in Lua and specify shader metadata and a specialization function (the .fx and .fx.lua files correspond one-to-one to each other)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;ShaderCompiler.exe&lt;/code&gt; is the Double Fine shader generator program (it doesn't do any real compiling; it delegates that work to the platform shader compiler)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Platform shader compiler&lt;/code&gt; is whatever shader compiler is used for the target platform, such as FXC.EXE for Windows&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.fxo&lt;/code&gt; files are loaded by the game&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ShaderCompiler.exe proceeds in this order:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Run the C preprocessor over the HLSL code; put the #define macros into a Lua table&lt;/li&gt;
+&lt;li&gt;For each shader declared in the .fx.lua file:&lt;ul&gt;
+&lt;li&gt;Call Specialize() for each of the 2^N permutations to get all the techniques&lt;/li&gt;
+&lt;li&gt;Find the unique set of vertex and pixel shaders in those techniques&lt;/li&gt;
+&lt;li&gt;For each vertex/pixel shader:&lt;ul&gt;
+&lt;li&gt;Substitute the technique's branch values into the HLSL code&lt;/li&gt;
+&lt;li&gt;Run the C preprocessor over the specialized HLSL code to substitute the technique's macro defines into the code&lt;/li&gt;
+&lt;li&gt;Call the platform shader compiler on the specialized, preprocessed code&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Gather the results and package everything into a .fxo file&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Runtime&lt;/h3&gt;
+&lt;p&gt;At runtime, we set the branch values as booleans in a constant buffer: &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;pRenderContext-&amp;gt;SetShaderBool(g_bShadowCast, false);
+pRenderContext-&amp;gt;SetShaderBool(g_bSkinning, mesh-&amp;gt;has_skinning_data());
+...
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then we set the shader and draw:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;pRenderContext-&amp;gt;SetShader(MeshShader);
+pRenderContext-&amp;gt;Draw(mesh);
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;When we draw a mesh, we use the state of the boolean branch values to construct an index into an array of techniques for that shader. Each branch gets one bit in the index. The techniques can be stored as an array for fast lookup but at the cost of more memory, or you can put the techniques into a hash table where the key=index and value=technique, or whatever scheme you want. We look up that technique, set its render state, its shaders, and finally issue the draw calls for the mesh.&lt;/p&gt;
+&lt;h3&gt;Validating Lua&lt;/h3&gt;
+&lt;p&gt;Although Lua is easy to use to define data, it is dynamically typed, so it's best to do some extra work to enforce that tables contain only valid values. For example, we want the Shader.Technique.RenderState table to only contain fields for render state that we support. When you assign a value to one of the entries in the table, we make sure that value is valid (so you can only assign true/false to AlphaBlendEnable, and not assign true/false to AlphaBlendFunc).&lt;/p&gt;
+&lt;p&gt;We can use Lua's metatables to manage access to the table. Here's some code to create read-only enums:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;-- Redefine pairs() and ipairs() to call the metatable&amp;#39;s __pairs/__ipairs function, if they exist&lt;/span&gt;
+&lt;span class="c1"&gt;-- By default, pairs/ipairs will not call the metatable&amp;#39;s __index field, which doesn&amp;#39;t work with&lt;/span&gt;
+&lt;span class="c1"&gt;-- our controlled-access tables.&lt;/span&gt;
+&lt;span class="n"&gt;rawpairs&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rawipairs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;pairs&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;ipairs&lt;/span&gt;
+&lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="nf"&gt;pairs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;__pairs&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;rawpairs&lt;/span&gt;&lt;span class="p"&gt;)(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="nf"&gt;ipairs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="ow"&gt;and&lt;/span&gt; &lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;__ipairs&lt;/span&gt; &lt;span class="ow"&gt;or&lt;/span&gt; &lt;span class="n"&gt;rawipairs&lt;/span&gt;&lt;span class="p"&gt;)(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;
+
+&lt;span class="c1"&gt;-- Return a read-only enum. Keys can be read, but neither created nor changed.&lt;/span&gt;
+&lt;span class="c1"&gt;-- The input should be a table of strings, one for each enum type.&lt;/span&gt;
+&lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="nf"&gt;ReadOnlyEnum&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;table&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;pairs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;table&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;type&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;~=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;string&amp;quot;&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt; &lt;span class="nb"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Enum entries must be strings&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;__table&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{}&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;pairs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;table&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="n"&gt;__table&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;v&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;
+
+    &lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;newtable_mt&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+       &lt;span class="n"&gt;__newindex&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="nb"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Attempt to modify an enum&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+       &lt;span class="n"&gt;__index&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;__table&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;~=&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;__table&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+                               &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="nb"&gt;error&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Unknown enum value &amp;#39;&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;..&lt;/span&gt; &lt;span class="nb"&gt;tostring&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;..&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;&amp;#39;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+       &lt;span class="n"&gt;__pairs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;pairs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;__table&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+       &lt;span class="n"&gt;__ipairs&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;function&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;ipairs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;getmetatable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;__table&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+       &lt;span class="n"&gt;__table&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;__table&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;setmetatable&lt;/span&gt;&lt;span class="p"&gt;({},&lt;/span&gt; &lt;span class="n"&gt;newtable_mt&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We can use the above code to set up some enums like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;FillMode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ReadOnlyEnum&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Solid&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Wireframe&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="n"&gt;CullMode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ReadOnlyEnum&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;CW&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;CCW&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;None&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="n"&gt;ComparisonFunc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ReadOnlyEnum&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Never&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Less&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Equal&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;LEqual&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Greater&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;NotEqual&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;GEqual&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;Always&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And then we can use these enums as you'd expect in the .fx.lua like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;FillMode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;FillMode&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Solid&lt;/span&gt;
+&lt;span class="n"&gt;technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;CullMode&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;CullMode&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;CW&lt;/span&gt;
+&lt;span class="n"&gt;technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ZFunc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ComparisonFunc&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;LEqual&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And when we try to assign something incorrectly, we get an informative error message:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;technique.RenderState.CullMode = CullMode.SomethingElse        -- this is line 35
+
+lua: enum.lua:35: Unknown enum value &amp;#39;SomethingElse&amp;#39;
+stack traceback:
+    [C]: in function &amp;#39;error&amp;#39;
+    enum.lua:19: in function &amp;lt;enum.lua:18&amp;gt;
+    enum.lua:35: in main chunk
+    [C]: ?
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We could have validated the data in C when we retrieved the values from the technique.RenderState table, but there's no way to get the line number of where that value came from in Lua. With the above code, errors are caught immediately in Lua, and we can use the Lua &lt;code&gt;error()&lt;/code&gt; function to tell Lua where the error occurred.&lt;/p&gt;
+&lt;h3&gt;C Preprocessor&lt;/h3&gt;
+&lt;p&gt;We use &lt;a href="http://mcpp.sourceforge.net/"&gt;mcpp&lt;/a&gt; to preprocess the shaders. You can read more about mcpp at that page. We put the macro definitions into a Lua table so that the same constants used in the .fx files can be used in the .fx.lua file. There are no duplicated constants between the HLSL and Lua code, and we don't have to do something unorthodox like run the C preprocessor over the Lua files.&lt;/p&gt;
+&lt;p&gt;The problem, though, is that we want to know the values of the macro defines &lt;em&gt;after&lt;/em&gt; they have been preprocessed. For example, given &lt;code&gt;#define MACRO_A 1&lt;/code&gt; and &lt;code&gt;#define MACRO_B MACRO_A&lt;/code&gt;, we want to set MACRO_A to 1 and MACRO_B to 1. mcpp makes these easy with its &lt;code&gt;put_defines&lt;/code&gt; pragma, which outputs the macro definitions at that point in the file.&lt;/p&gt;
+&lt;p&gt;When we run &lt;code&gt;mcpp.exe -z -j -P ShaderCommon.h&lt;/code&gt; with &lt;code&gt;#pragma mcpp put_defines&lt;/code&gt; at the end of the file, we get output like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="cm"&gt;/* Currently defined macros. */&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="err"&gt;#&lt;/span&gt;define&lt;span class="w"&gt; &lt;/span&gt;kIMAGE_PROCESS_STENCIL_BIT&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;128&lt;/span&gt;&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="cm"&gt;/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="err"&gt;#&lt;/span&gt;define&lt;span class="w"&gt; &lt;/span&gt;kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;96&lt;/span&gt;&lt;span class="w"&gt;      &lt;/span&gt;&lt;span class="cm"&gt;/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="err"&gt;#&lt;/span&gt;define&lt;span class="w"&gt; &lt;/span&gt;kDEFAULT_MIN_TEXTURE_ALPHA&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;f&lt;span class="o"&gt;)&lt;/span&gt;&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="cm"&gt;/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:132    */&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="err"&gt;#&lt;/span&gt;define&lt;span class="w"&gt; &lt;/span&gt;kPROJECT_LIGHT_STENCIL_BIT&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;64&lt;/span&gt;&lt;span class="w"&gt;   &lt;/span&gt;&lt;span class="cm"&gt;/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:115    */&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="err"&gt;#&lt;/span&gt;define&lt;span class="w"&gt; &lt;/span&gt;kSHADOW_RECEIVER_STENCIL_BIT&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;128&lt;/span&gt;&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="cm"&gt;/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:124    */&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We parse the above #define's into key/value pairs and put them into a Lua table named cpp:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;cpp&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{}&lt;/span&gt;
+&lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="nf"&gt;rtrim&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="n"&gt;gsub&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;%s*$&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;function&lt;/span&gt; &lt;span class="nf"&gt;RegisterMacros&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;string&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;line&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="nb"&gt;string.gmatch&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;string&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;([^&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;]+)&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt;
+        &lt;span class="kd"&gt;local&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;string.match&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;line&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;^#define (%S+) (.+)%s+/%*&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="k"&gt;then&lt;/span&gt; &lt;span class="n"&gt;cpp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rtrim&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now we can use them anywhere in the .fx.lua files:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilEnable&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilRef&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilMask&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;tonumber&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cpp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;kDYNAMIC_MESH_STENCIL_BIT&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilWriteMask&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;tonumber&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cpp&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;kPROJECT_LIGHT_STENCIL_BIT&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilFunc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ComparisonFunc&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Equal&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilPass&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Stencil&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Invert&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilFail&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Stencil&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Keep&lt;/span&gt;
+&lt;span class="n"&gt;shader&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Technique&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RenderState&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;StencilZFail&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Stencil&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Keep&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">David Farrell</dc:creator><pubDate>Wed, 31 Dec 2014 12:00:00 -0800</pubDate><guid isPermaLink="false">tag:,2014-12-31:ShaderGeneration.html</guid><category>Programming</category></item><item><title>Physically Based Deferred Rendering in Costume Quest 2</title><link>/CQ2Rendering.html</link><description>&lt;p&gt;Developing the rendering tech for Double Fine's Costume Quest 2 was challenging because the game was developed by a small team in less than a year. It was even more challenging because it was released nearly simultaneously on eight platforms: PS4, XBox One, PS3, XBox 360, WiiU, Windows, OSX, and Linux. It used Double Fine's proprietary game engine, named Buddha.&lt;/p&gt;
+&lt;p&gt;Much of the engineering schedule for Costume Quest 2 (CQ2) was taken up with resurrecting support for the old consoles and and bringing up the engine on new consoles. At the beginning of development, Buddha was running only on Windows, and with a bit of fixing up, also on OSX and Linux. The 360 and PS3 builds had suffered heavily bit rot, and the WiiU port had never been integrated back to our main codebase. Finally, the Buddha engine wasn't 64-bit, much less running on XBOne or PS4.&lt;/p&gt;
+&lt;p&gt;As a result, little programming time was left for look development in preproduction. On the plus side, CQ2 was a sequel, so the game's art style was a known quantity. Nevertheless, the CQ2 design was more ambitious than the original Costume Quest, including levels in a swampy bayou in New Orleans and a dystopic future where you have to save Halloween from an evil time-traveling dentist.&lt;/p&gt;
+&lt;p&gt;We knew we could use the old graphics tech from the original game, but of course, we wanted to improve on the past and do better. We also had the difficult constraint of having to scale from last gen consoles all the way up to modern consoles and desktop PC's. So... let's roll up our sleeves and get to it!&lt;/p&gt;
+&lt;p&gt;&lt;img alt="test image" src="/images/cq2/cq2_bayou.jpg" /&gt;&lt;/p&gt;
+&lt;h3&gt;Physically Based Rendering&lt;/h3&gt;
+&lt;p&gt;Costume Quest's aesthetics are inspired more by a comic book art style than the physical constraints of the real world, so you might be wondering how physically based rendering applies to CQ2. Actually, the game has two separate styles of rendering; the first is for the toon-shaded characters, and the second is for the more traditionally rendered world.&lt;/p&gt;
+&lt;p&gt;The first style of rendering is for the characters, which use a toon shader and a cel outline effect. That shading is not even vaguely physically based; if we had more graphics dev time on CQ2, I would have looked into developing an energy conserving toon shader effect. Instead, the toon shader is a simple 1D lookup texture based on the NdotL of a single light direction. That's also the same effect that was used in the original Costume Quest.&lt;/p&gt;
+&lt;p&gt;The second style of rendering is for the rest of the world, which uses an energy conserving Blinn-Phong BRDF lit by a primary shadow-casting sunlight, additional point lights, and a hemisphere light for ambient lighting. All lighting was dynamic, except for prebaked per-vertex ambient occlusion. The Blinn Phong BRDF was based on &lt;a href="http://renderwonk.com/publications/s2010-shading-course/gotanda/course_note_practical_implementation_at_triace.pdf"&gt;Tri-Ace's work&lt;/a&gt;. We dropped the Fresnel factor, which doesn't match the real world but doesn't break energy conservation. The Fresnel effect didn't fit the art style, and it was a bit cheaper to drop the calculation.&lt;/p&gt;
+&lt;p&gt;Here you can see the toon-shaded characters along with a nice specular highlight on the ground:
+&lt;img alt="test image" src="/images/cq2/cq2_street.jpg" /&gt;&lt;/p&gt;
+&lt;p&gt;There are two aspects of physically based rendering which are very useful even for games that use nonphotorealistic materials. One aspect is energy conservation, meaning that a surface emits no more light than it receives. This is important because you want materials that work independently of the lighting environment and avoid the production problem of reworking materials after you do a lighting pass and vice versa. When renderers don't obey energy conservation, such as with unnormalized Blinn-Phong, you often have to manually adjust the specular color, gloss, and perhaps other ad-hoc factors whenever the lighting changes. Another useful aspect of physically based rendering is that it produces more consistent results by following a few constraints. The number and range of material attributes is better defined, which helped us reason about about which values were important to Costume Quest 2 and how best to pack them into a deferred renderer's gbuffer.&lt;/p&gt;
+&lt;p&gt;CQ2 strayed from realism in many ways but kept those two aspects of physically based rendering. For instance:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We removed support for metallic materials. There's no support for a specular color vector; instead, there's a specular intensity scalar value. This was done to fit into the small gbuffer, and there are few metals in the CQ2 universe.&lt;/li&gt;
+&lt;li&gt;Even though &lt;a href="http://filmicgames.com/archives/547"&gt;everything is shiny&lt;/a&gt; in the real world, many of the materials are purely diffuse with a specular intensity value of 0.0. &lt;/li&gt;
+&lt;li&gt;We removed the Fresnel effect, which doesn't match the real world, but isn't necessary for energy conservation. The effect looked out of place with CQ2's aesthetics and was slightly cheaper to compute.&lt;/li&gt;
+&lt;li&gt;Our point lights used a color inside an inner radius and a different color inside an outer radius, which isn't possible in the real world, but the important aspect of energy conservation (basically, that the light exiting a surface is less than or equal to the light illuminating the surface) was still maintained.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Deferred Rendering&lt;/h3&gt;
+&lt;p&gt;We faced many constraints when targeting so many platforms. We knew we wanted to support a large number of lights, so a deferred renderer of some kind made sense. We wanted to use as much of the same rendering code as possible on all of the platforms, because we didn't have time in the schedule to carefully tune our renderer for every target. However, various platforms limited our options in different ways: the XBox 360 has just 10 MB of EDRAM, the PS3's RSX has relatively low bandwidth to memory, and of course even the XBoxOne has 32 MB of ESRAM (although that machine is much more flexible than older consoles). We chose a gbuffer format of two RGBA8888 render targets (plus the depth buffer) to fit in EDRAM and run well everywhere. This fit neatly into the 360's EDRAM (where we render at 1200x720) and also fits into the 32 MB ESRAM of the XBox One (where we render at 1920x1080).&lt;/p&gt;
+&lt;p&gt;One of the advantages of physically based rendering, as I mentioned above, is that materials produce more consistent results by following a few constraints. Most materials are either metallic or dielectrics, and with some simplification, the constraints can be summarized as this:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Non-metals (dielectrics) have an albedo color and monochromatic specular in the range (0.02, 0.08)&lt;/li&gt;
+&lt;li&gt;Metals have no albedo color and a specular color value in (0.5, 1.0)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A minimal Blinn-Phong BRDF will use an albedo color, specular color, gloss scalar, and normal vector. That's 10 components, which would be tricky to fit into the smaller gbuffer format. CQ2 additionally needed to store ambient occlusion and emissive values in the gbuffer, making it even more difficult to fit.&lt;/p&gt;
+&lt;p&gt;The paper &lt;a href="http://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf"&gt;Physically Based Shading at Disney&lt;/a&gt; is interesting because it takes advantage of the constraints of physically based materials. They use a metallic texture to indicate whether a material is a dielectric or metal; in the case of a dielectric, they use the albedo color directly along with a scalar specular intensity, and for metals, they repurpose the albedo color as the specular color and use an all-black albedo for lighting. A similar technique is also used by &lt;a href="https://docs.unrealengine.com/latest/INT/Engine/Rendering/Materials/PhysicallyBased/index.html"&gt;Unreal 4&lt;/a&gt;. The metallic value helps a lot with packing values into a gbuffer because you no longer need to store a specular color in 3 components. A possible gbuffer layout would look like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;albedo R         | albedo G        | albedo B        | metal
+normal X         | normal Y        | spec. intensity | gloss
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;That's close to what we want with Costume Quest 2, but we have nowhere to put the ambient occlusion and emissive value. As mentioned above, we decided to drop support for metallic materials. We don't need the metal component, but it's also useful to remember the specular intensity for dielectrics is in the range [0.0,0.1] and doesn't need much precision. We pack the specular intensity with the emissive, and place the ambient occlusion into a separate channel.&lt;/p&gt;
+&lt;p&gt;That gets us to the layout we used for CQ2:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;albedo R         | albedo G        | albedo B                   | ambient occlusion
+normal X         | normal Y        | spec. intensity / emissive | gloss / cel shaded 
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;In this screenshot, you can see debug visualizations of unpacked data in the gbuffer. Clockwise from top left, they are albedo, normal, specular intensity, roughness, ambient occlusion, and emissive.
+&lt;img alt="test image" src="/images/cq2/cq2_gbuffer.jpg" /&gt;&lt;/p&gt;
+&lt;p&gt;The albedo had to be stored in gamma space as this was an eight bit per channel format. Our pipeline is gamma correct, meaning it does all lighting and blending in linear space, so we had to be sure to convert the albedo colors to sRGB before we wrote them to the framebuffer. Not all platforms had support for per-render-target sRGB writes, so this was done manually.&lt;/p&gt;
+&lt;p&gt;Normals were stored in view space.&lt;/p&gt;
+&lt;p&gt;The ambient occlusion stored the per-vertex AO. This needed to be in its own channel (not packed with anything else) because screen-space ambient occlusion blended with this value. Additionally, the character drop shadows would blend with the ambient occlusion channel.&lt;/p&gt;
+&lt;p&gt;The specular intensity and emissive were packed together using four bits each. The specular intensity represented a value in the range [0, 0.1], and the emissive was in the range [0, 8]. In the lighting composition pass, the emissive value multiplied with the albedo color and added to the final lit color. It would have been nice to have a separate emissive color, but there was no room in the gbuffer.&lt;/p&gt;
+&lt;p&gt;The gloss (AKA roughness, or smoothness) was in the range [0, 2048] and stored in 7 bits. The top bit stored the cel shaded bit.&lt;/p&gt;
+&lt;h3&gt;Future&lt;/h3&gt;
+&lt;p&gt;It would have been interesting to squeeze more out of the gbuffer by encoding albedo in YCoCg as discussed in &lt;a href="http://jcgt.org/published/0001/01/02/"&gt;The Compact YCoCg Framebuffer&lt;/a&gt;. &lt;/p&gt;
+&lt;p&gt;The popular GGX shading function can be evaluated pretty cheaply; you can read more about that at &lt;a href="http://www.filmicworlds.com/2014/04/21/optimizing-ggx-shaders-with-dotlh/"&gt;Optimizing GGX Shaders with dot(L,H)&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Future projects will have different constraints and target more modern hardware, but I wanted to share what worked well for Costume Quest 2.&lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">David Farrell</dc:creator><pubDate>Sat, 15 Nov 2014 12:00:00 -0800</pubDate><guid isPermaLink="false">tag:,2014-11-15:CQ2Rendering.html</guid><category>Programming</category></item><item><title>Setting Up This Blog</title><link>/setting-up.html</link><description>&lt;p&gt;This blog uses the static site generator &lt;a href="http://www.getpelican.com"&gt;Pelican&lt;/a&gt; and is hosted on &lt;a href="http://www.github.com"&gt;Github&lt;/a&gt;. Here are a few notes on how I set things up.&lt;/p&gt;
+&lt;h2&gt;Installing Pelican&lt;/h2&gt;
+&lt;p&gt;First, get Python 2.7, and get the Python package manager Pip. For Windows, you can follow the instructions &lt;a href="http://docs.python-guide.org/en/latest/starting/install/win/"&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Make a directory for your blog, such as &lt;code&gt;c:\blog&lt;/code&gt;. Then, &lt;code&gt;pip install pelican&lt;/code&gt; and if you want Markdown support &lt;code&gt;pip install markdown&lt;/code&gt;. Many online guides suggest you put Pelican into a Python virtualenv. That's not necessary, but it keeps things tidy, so I made a virtualenv at &lt;code&gt;c:\blog&lt;/code&gt; and installed Pelican using Pip like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;virtualenv virtualenv-pelican
+cd virtualenv-pelican\scripts
+activate
+pip install pelican markdown
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Creating The Blog&lt;/h2&gt;
+&lt;p&gt;Next, I set up the blog for Pelican. I put the source content that Pelican processes into &lt;code&gt;c:\blog\source&lt;/code&gt; and the generated HTML into &lt;code&gt;c:\blog\site&lt;/code&gt; by doing this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;md c:\blog\source c:\blog\site
+cd c:\blog\source
+pelican-quickstart
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The default answers to the questions are usually reasonable, but season to taste.&lt;/p&gt;
+&lt;p&gt;By default, Pelican puts the generated HTML into the &lt;code&gt;output&lt;/code&gt; directory relative to pelicanconf.py. I prefer to call it the &lt;code&gt;site&lt;/code&gt; directory and have it sit side-by-side the &lt;code&gt;source&lt;/code&gt; directory because it makes the Github setup a bit cleaner. I edited the &lt;code&gt;pelicanconf.py&lt;/code&gt; and changed the &lt;code&gt;OUTPUTPATH&lt;/code&gt; variable to point to &lt;code&gt;c:\blog\site&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;OUTPUT_PATH = &amp;#39;../site&amp;#39;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then add a post in the &lt;code&gt;content&lt;/code&gt; directory at &lt;code&gt;c:\blog\source\content&lt;/code&gt;. A simple Markdown post should work:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;Title: First Post
+Date: 2014-5-26 12:00
+Tags: Blog
+Category: Blog
+Slug: first-post
+Author: David Farrell
+Summary: First Post
+It&amp;#39;s so easy when everybody&amp;#39;s trying to please me, baby
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We should be able to generate the blog now. Try this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;make html
+make serve
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Browse to &lt;code&gt;127.0.0.1:8000&lt;/code&gt; and, hey, it works!&lt;/p&gt;
+&lt;h2&gt;Live Editing&lt;/h2&gt;
+&lt;p&gt;In one shell, run &lt;code&gt;make regenerate&lt;/code&gt;. This automatically regenerates the &lt;code&gt;site&lt;/code&gt; directory whenever you change a file in the &lt;code&gt;source&lt;/code&gt; directory. In another shell, run the local web server &lt;code&gt;make serve&lt;/code&gt;. Now you can change any file, refresh your browser, and immediately see your changes.&lt;/p&gt;
+&lt;p&gt;The command &lt;code&gt;make devserver&lt;/code&gt; will also do that, but it calls a Bash script, which doesn't work on Windows.&lt;/p&gt;
+&lt;h2&gt;Pelican Themes&lt;/h2&gt;
+&lt;p&gt;The default Pelican theme isn't spectacular. You can get additional themes by cloning the Pelican theme repository:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;cd c:\blog\source
+git clone https://github.com/getpelican/pelican-themes themes
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You'll find all the themes in the new &lt;code&gt;themes&lt;/code&gt; directory. To choose one, set the &lt;code&gt;THEME&lt;/code&gt; variable in &lt;code&gt;pelicanconf.py&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;THEME = &amp;#39;themes/pelican-bootstrap3&amp;#39;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;I like the Pelican-Bootstrap3 theme. It has a &lt;code&gt;README.md&lt;/code&gt; that you'll want to read. The Bootstrap theme is actually themed itself with &lt;a href="http://bootswatch.com/"&gt;Bootswatch&lt;/a&gt;. You can also easily customize the CSS and set the syntax highlighting style. Here's the relevant bits in my &lt;code&gt;pelicanconf.py&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;BOOTSTRAP_THEME = &amp;#39;cyborg&amp;#39;        # Bootswatch sub-theme for Bootstrap
+PYGMENTS_STYLE = &amp;#39;monokai&amp;#39;        # Syntax highlighting theme
+CUSTOM_CSS = &amp;#39;static\custom.css&amp;#39;
+STATIC_PATHS=[&amp;#39;images&amp;#39;,&amp;#39;extra\custom.css&amp;#39;]
+EXTRA_PATH_METADATA = {&amp;#39;extra\custom.css&amp;#39;: {&amp;#39;path&amp;#39;: &amp;#39;static\custom.css&amp;#39;}}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;The full &lt;code&gt;extra\custom.css&lt;/code&gt; path is &lt;code&gt;c:\blog\source\content\extra\custom.css&lt;/code&gt; (some of Pelican's paths were relative to the &lt;code&gt;content&lt;/code&gt; directory). The only thing my custom.css does right now is change the backtick block highlighting colors; for some reason, those colors don't change with the Bootstrap theme or subthemes. Here's what that looks like:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;code {
+ padding:2px 4px;
+ font-size:90%;
+ white-space:nowrap;
+ background-color:#080808;
+ color:#b0b0b0;
+ border-radius:4px
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Github Pages Hosting&lt;/h2&gt;
+&lt;p&gt;I'm using &lt;a href="https://pages.github.com/"&gt;Github Pages&lt;/a&gt; to host this blog. I created two repositories. One is named &lt;code&gt;nosferalatu.github.io&lt;/code&gt; and holds the blog site, and the other is named &lt;code&gt;nosferalatu.github.io.source&lt;/code&gt; and holds the Pelican source for the blog. You can configure git branches to hold everything in a single repo, but I thought it was more straightforward to just use two repositories.&lt;/p&gt;
+&lt;p&gt;I cleaned up the &lt;code&gt;themes&lt;/code&gt; directory to remove the themes I don't want (otherwise, that directory is around 176 megs). I then init both repositories and push them to Github with this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;cd c:\blog\site
+git init
+git add -A .
+git commit -m &amp;quot;initial commit&amp;quot;
+git remote add origin https://github.com/nosferalatu/nosferalatu.github.io.git
+git push -u origin master
+cd c:\blog\source
+git init
+git add -A .
+git commit -m &amp;quot;initial commit&amp;quot;
+git remote add origin https://github.com/nosferalatu/nosferalatu.github.io.source.git
+git push -u origin master
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;A few minutes later, the blog appears at &lt;a href="http://nosferalatu.github.io"&gt;nosferalatu.github.io&lt;/a&gt;. &lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">David Farrell</dc:creator><pubDate>Mon, 26 May 2014 13:00:00 -0700</pubDate><guid isPermaLink="false">tag:,2014-05-26:setting-up.html</guid><category>Blog</category></item></channel></rss>

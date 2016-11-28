@@ -81,7 +81,7 @@ Nosferalatu            </a>
 <footer class="post-info">
     <span class="label label-default">Date</span>
     <span class="published">
-        <i class="fa fa-calendar"></i><time datetime="2014-12-31T12:00:00"> Wed 31 December 2014</time>
+        <i class="fa fa-calendar"></i><time datetime="2014-12-31T12:00:00-08:00"> Wed 31 December 2014</time>
     </span>
 
 
@@ -96,27 +96,27 @@ Nosferalatu            </a>
 <p>At a high level, you write HLSL as you normally would, and also write a small file in Lua to specify the additional information needed for the graphics pipeline. These two files sit side-by-side. We separate the HLSL and Lua code into different files so that text editors can edit the files in either HLSL mode or Lua mode, but you could alternatively embed HLSL as strings in Lua and keep it all in one file.</p>
 <p>To manage ubershaders, the Lua file contains a function called <code>Specialize()</code> that controls how to generate variants of the ubershader. I'll explain more about how that works below.</p>
 <p>Here's a simple example of a shader that outputs a green triangle. The first block is an .fx file and the second is the corresponding .fx.lua file:</p>
-<div class="highlight"><pre><span class="n">float4</span> <span class="n">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="n">vertexid</span> <span class="o">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
+<div class="highlight"><pre><span></span><span class="n">float4</span> <span class="nf">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="nl">vertexid</span> <span class="p">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
 <span class="p">{</span>
     <span class="n">float4</span> <span class="n">pos</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}</span> <span class="p">};</span>
     <span class="k">return</span> <span class="n">pos</span><span class="p">[</span><span class="n">vertexid</span><span class="p">];</span>
 <span class="p">}</span>
 
-<span class="n">float4</span> <span class="n">SimpleShaderPS</span><span class="p">()</span>
+<span class="n">float4</span> <span class="nf">SimpleShaderPS</span><span class="p">()</span>
 <span class="p">{</span>
     <span class="k">return</span> <span class="n">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
 </pre></div>
 
 
 <p>Here's a slightly more complex example where we set up render state to turn on alpha blending for the shader. The .fx file is the same, but the .fx.lua has changed:</p>
-<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">AlphaBlendEnable</span> <span class="o">=</span> <span class="kc">true</span>
@@ -135,25 +135,25 @@ Nosferalatu            </a>
 </ul>
 <p>At runtime, the game sets which shader to use and sets the values of the branch booleans. The rendering code then uses the boolean values to select which technique in the shader should be used by the GPU.</p>
 <p>In the example above, the shader code has exactly one technique because it has no branches. Here's an example of a shader that has one branch and outputs either green or blue:</p>
-<div class="highlight"><pre><span class="kt">bool</span> <span class="n">g_bOutputBlue</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="kt">bool</span> <span class="n">g_bOutputBlue</span><span class="p">;</span>
 
-<span class="n">float4</span> <span class="n">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="n">vertexid</span> <span class="o">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
+<span class="n">float4</span> <span class="nf">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="nl">vertexid</span> <span class="p">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
 <span class="p">{</span>
     <span class="n">float4</span> <span class="n">pos</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}</span> <span class="p">};</span>
     <span class="k">return</span> <span class="n">pos</span><span class="p">[</span><span class="n">vertexid</span><span class="p">];</span>
 <span class="p">}</span>
 
-<span class="n">float4</span> <span class="n">SimpleShaderPS</span><span class="p">()</span>
+<span class="n">float4</span> <span class="nf">SimpleShaderPS</span><span class="p">()</span>
 <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">g_bOutputBlue</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
     <span class="k">else</span>
-        <span class="k">return</span> <span class="nf">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">float4</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
 
 
-<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;</span><span class="s">g_bOutputBlue&quot;</span> <span class="p">}</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
     <span class="kd">local</span> <span class="n">technique</span> <span class="o">=</span> <span class="n">Technique</span><span class="p">()</span>
@@ -172,7 +172,7 @@ Nosferalatu            </a>
 <p>The <code>Specialize()</code> function doesn't have to return the same branch values that are passed in. Obviously, 2^N different variants becomes prohibitively expensive. Often, though, shader variants can be combined together, or are mutually exclusive. The <code>Specialize()</code> function in Lua can guide this process and reduce the number of variants from the millions to just a few hundred.</p>
 <p>The important thing to note is that for N boolean branches, we have 2^N permutations of values, each of which are mapped through the specialization function, which returns a technique. We find the unique shaders from that set of techniques and send those to the platform-specific shader compiler.</p>
 <p>Here's an example from Massive Chalice, where we have 14 different branches for our main mesh shader, but fewer actual variants:</p>
-<div class="highlight"><pre><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">RenderMesh&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">RenderMesh&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;</span><span class="s">g_bBinaryAlpha&quot;</span><span class="p">,</span>
     <span class="s2">&quot;</span><span class="s">g_bBloom&quot;</span><span class="p">,</span>
@@ -294,15 +294,15 @@ Nosferalatu            </a>
 </ul>
 <h3>Runtime</h3>
 <p>At runtime, we set the branch values as booleans in a constant buffer: </p>
-<div class="highlight"><pre><span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">SetShaderBool</span><span class="p">(</span><span class="n">g_bShadowCast</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
-<span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">SetShaderBool</span><span class="p">(</span><span class="n">g_bSkinning</span><span class="p">,</span> <span class="n">mesh</span><span class="o">-&gt;</span><span class="n">has_skinning_data</span><span class="p">());</span>
-<span class="p">...</span>
+<div class="highlight"><pre><span></span>pRenderContext-&gt;SetShaderBool(g_bShadowCast, false);
+pRenderContext-&gt;SetShaderBool(g_bSkinning, mesh-&gt;has_skinning_data());
+...
 </pre></div>
 
 
 <p>Then we set the shader and draw:</p>
-<div class="highlight"><pre><span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">SetShader</span><span class="p">(</span><span class="n">MeshShader</span><span class="p">);</span>
-<span class="n">pRenderContext</span><span class="o">-&gt;</span><span class="n">Draw</span><span class="p">(</span><span class="n">mesh</span><span class="p">);</span>
+<div class="highlight"><pre><span></span>pRenderContext-&gt;SetShader(MeshShader);
+pRenderContext-&gt;Draw(mesh);
 </pre></div>
 
 
@@ -310,7 +310,7 @@ Nosferalatu            </a>
 <h3>Validating Lua</h3>
 <p>Although Lua is easy to use to define data, it is dynamically typed, so it's best to do some extra work to enforce that tables contain only valid values. For example, we want the Shader.Technique.RenderState table to only contain fields for render state that we support. When you assign a value to one of the entries in the table, we make sure that value is valid (so you can only assign true/false to AlphaBlendEnable, and not assign true/false to AlphaBlendFunc).</p>
 <p>We can use Lua's metatables to manage access to the table. Here's some code to create read-only enums:</p>
-<div class="highlight"><pre><span class="c1">-- Redefine pairs() and ipairs() to call the metatable&#39;s __pairs/__ipairs function, if they exist</span>
+<div class="highlight"><pre><span></span><span class="c1">-- Redefine pairs() and ipairs() to call the metatable&#39;s __pairs/__ipairs function, if they exist</span>
 <span class="c1">-- By default, pairs/ipairs will not call the metatable&#39;s __index field, which doesn&#39;t work with</span>
 <span class="c1">-- our controlled-access tables.</span>
 <span class="n">rawpairs</span><span class="p">,</span> <span class="n">rawipairs</span> <span class="o">=</span> <span class="nb">pairs</span><span class="p">,</span> <span class="nb">ipairs</span>
@@ -340,21 +340,21 @@ Nosferalatu            </a>
 
 
 <p>We can use the above code to set up some enums like this:</p>
-<div class="highlight"><pre><span class="n">FillMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Solid&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Wireframe&quot;</span><span class="p">}</span>
+<div class="highlight"><pre><span></span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Solid&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Wireframe&quot;</span><span class="p">}</span>
 <span class="n">CullMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">CW&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">CCW&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">None&quot;</span><span class="p">}</span>
 <span class="n">ComparisonFunc</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Never&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Less&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Equal&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">LEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Greater&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">NotEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">GEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Always&quot;</span><span class="p">}</span>
 </pre></div>
 
 
 <p>And then we can use these enums as you'd expect in the .fx.lua like this:</p>
-<div class="highlight"><pre><span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">FillMode</span><span class="p">.</span><span class="n">Solid</span>
+<div class="highlight"><pre><span></span><span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">FillMode</span><span class="p">.</span><span class="n">Solid</span>
 <span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">CullMode</span> <span class="o">=</span> <span class="n">CullMode</span><span class="p">.</span><span class="n">CW</span>
 <span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ZFunc</span> <span class="o">=</span> <span class="n">ComparisonFunc</span><span class="p">.</span><span class="n">LEqual</span>
 </pre></div>
 
 
 <p>And when we try to assign something incorrectly, we get an informative error message:</p>
-<div class="highlight"><pre>technique.RenderState.CullMode = CullMode.SomethingElse        -- this is line 35
+<div class="highlight"><pre><span></span>technique.RenderState.CullMode = CullMode.SomethingElse        -- this is line 35
 
 lua: enum.lua:35: Unknown enum value &#39;SomethingElse&#39;
 stack traceback:
@@ -370,18 +370,18 @@ stack traceback:
 <p>We use <a href="http://mcpp.sourceforge.net/">mcpp</a> to preprocess the shaders. You can read more about mcpp at that page. We put the macro definitions into a Lua table so that the same constants used in the .fx files can be used in the .fx.lua file. There are no duplicated constants between the HLSL and Lua code, and we don't have to do something unorthodox like run the C preprocessor over the Lua files.</p>
 <p>The problem, though, is that we want to know the values of the macro defines <em>after</em> they have been preprocessed. For example, given <code>#define MACRO_A 1</code> and <code>#define MACRO_B MACRO_A</code>, we want to set MACRO_A to 1 and MACRO_B to 1. mcpp makes these easy with its <code>put_defines</code> pragma, which outputs the macro definitions at that point in the file.</p>
 <p>When we run <code>mcpp.exe -z -j -P ShaderCommon.h</code> with <code>#pragma mcpp put_defines</code> at the end of the file, we get output like this:</p>
-<div class="highlight"><pre><span class="cm">/* Currently defined macros. */</span>
-<span class="p">#</span><span class="n">define</span> <span class="n">kIMAGE_PROCESS_STENCIL_BIT</span> <span class="mh">128</span>  <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */</span>
-<span class="p">#</span><span class="n">define</span> <span class="n">kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT</span> <span class="mh">96</span>      <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */</span>
-<span class="p">#</span><span class="n">define</span> <span class="n">kDEFAULT_MIN_TEXTURE_ALPHA</span> <span class="p">(</span><span class="mf">1.f</span><span class="p">)</span>        <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:132    */</span>
-<span class="p">#</span><span class="n">define</span> <span class="n">kPROJECT_LIGHT_STENCIL_BIT</span> <span class="mh">64</span>   <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:115    */</span>
-<span class="p">#</span><span class="n">define</span> <span class="n">kSHADOW_RECEIVER_STENCIL_BIT</span> <span class="mh">128</span>        <span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:124    */</span>
-<span class="p">...</span>
+<div class="highlight"><pre><span></span><span class="cm">/* Currently defined macros. */</span><span class="w"></span>
+<span class="err">#</span>define<span class="w"> </span>kIMAGE_PROCESS_STENCIL_BIT<span class="w"> </span><span class="m">128</span><span class="w">  </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */</span><span class="w"></span>
+<span class="err">#</span>define<span class="w"> </span>kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT<span class="w"> </span><span class="m">96</span><span class="w">      </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */</span><span class="w"></span>
+<span class="err">#</span>define<span class="w"> </span>kDEFAULT_MIN_TEXTURE_ALPHA<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">.</span>f<span class="o">)</span><span class="w">        </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:132    */</span><span class="w"></span>
+<span class="err">#</span>define<span class="w"> </span>kPROJECT_LIGHT_STENCIL_BIT<span class="w"> </span><span class="m">64</span><span class="w">   </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:115    */</span><span class="w"></span>
+<span class="err">#</span>define<span class="w"> </span>kSHADOW_RECEIVER_STENCIL_BIT<span class="w"> </span><span class="m">128</span><span class="w">        </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:124    */</span><span class="w"></span>
+<span class="o">...</span><span class="w"></span>
 </pre></div>
 
 
 <p>We parse the above #define's into key/value pairs and put them into a Lua table named cpp:</p>
-<div class="highlight"><pre><span class="n">cpp</span> <span class="o">=</span> <span class="p">{}</span>
+<div class="highlight"><pre><span></span><span class="n">cpp</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="k">function</span> <span class="nf">rtrim</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span><span class="n">gsub</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">%s*$&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">&quot;</span><span class="p">))</span> <span class="k">end</span>
 <span class="k">function</span> <span class="nf">RegisterMacros</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">line</span> <span class="k">in</span> <span class="nb">string.gmatch</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">([^</span><span class="se">\n</span><span class="s">]+)&quot;</span><span class="p">)</span> <span class="k">do</span>
@@ -393,7 +393,7 @@ stack traceback:
 
 
 <p>Now we can use them anywhere in the .fx.lua files:</p>
-<div class="highlight"><pre><span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilEnable</span> <span class="o">=</span> <span class="kc">true</span>
+<div class="highlight"><pre><span></span><span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilEnable</span> <span class="o">=</span> <span class="kc">true</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilRef</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;</span><span class="s">kDYNAMIC_MESH_STENCIL_BIT&quot;</span><span class="p">])</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilWriteMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;</span><span class="s">kPROJECT_LIGHT_STENCIL_BIT&quot;</span><span class="p">])</span>

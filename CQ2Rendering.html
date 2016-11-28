@@ -81,7 +81,7 @@ Nosferalatu            </a>
 <footer class="post-info">
     <span class="label label-default">Date</span>
     <span class="published">
-        <i class="fa fa-calendar"></i><time datetime="2014-11-15T12:00:00"> Sat 15 November 2014</time>
+        <i class="fa fa-calendar"></i><time datetime="2014-11-15T12:00:00-08:00"> Sat 15 November 2014</time>
     </span>
 
 
@@ -119,15 +119,15 @@ Nosferalatu            </a>
 </ul>
 <p>A minimal Blinn-Phong BRDF will use an albedo color, specular color, gloss scalar, and normal vector. That's 10 components, which would be tricky to fit into the smaller gbuffer format. CQ2 additionally needed to store ambient occlusion and emissive values in the gbuffer, making it even more difficult to fit.</p>
 <p>The paper <a href="http://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf">Physically Based Shading at Disney</a> is interesting because it takes advantage of the constraints of physically based materials. They use a metallic texture to indicate whether a material is a dielectric or metal; in the case of a dielectric, they use the albedo color directly along with a scalar specular intensity, and for metals, they repurpose the albedo color as the specular color and use an all-black albedo for lighting. A similar technique is also used by <a href="https://docs.unrealengine.com/latest/INT/Engine/Rendering/Materials/PhysicallyBased/index.html">Unreal 4</a>. The metallic value helps a lot with packing values into a gbuffer because you no longer need to store a specular color in 3 components. A possible gbuffer layout would look like this:</p>
-<div class="highlight"><pre><span class="n">albedo</span> <span class="n">R</span>         <span class="o">|</span> <span class="n">albedo</span> <span class="n">G</span>        <span class="o">|</span> <span class="n">albedo</span> <span class="n">B</span>        <span class="o">|</span> <span class="n">metal</span>
-<span class="n">normal</span> <span class="n">X</span>         <span class="o">|</span> <span class="n">normal</span> <span class="n">Y</span>        <span class="o">|</span> <span class="n">spec</span><span class="p">.</span> <span class="n">intensity</span> <span class="o">|</span> <span class="n">gloss</span>
+<div class="highlight"><pre><span></span>albedo R         | albedo G        | albedo B        | metal
+normal X         | normal Y        | spec. intensity | gloss
 </pre></div>
 
 
 <p>That's close to what we want with Costume Quest 2, but we have nowhere to put the ambient occlusion and emissive value. As mentioned above, we decided to drop support for metallic materials. We don't need the metal component, but it's also useful to remember the specular intensity for dielectrics is in the range [0.0,0.1] and doesn't need much precision. We pack the specular intensity with the emissive, and place the ambient occlusion into a separate channel.</p>
 <p>That gets us to the layout we used for CQ2:</p>
-<div class="highlight"><pre><span class="n">albedo</span> <span class="n">R</span>         <span class="o">|</span> <span class="n">albedo</span> <span class="n">G</span>        <span class="o">|</span> <span class="n">albedo</span> <span class="n">B</span>                   <span class="o">|</span> <span class="n">ambient</span> <span class="n">occlusion</span>
-<span class="n">normal</span> <span class="n">X</span>         <span class="o">|</span> <span class="n">normal</span> <span class="n">Y</span>        <span class="o">|</span> <span class="n">spec</span><span class="p">.</span> <span class="n">intensity</span> <span class="o">/</span> <span class="n">emissive</span> <span class="o">|</span> <span class="n">gloss</span> <span class="o">/</span> <span class="n">cel</span> <span class="n">shaded</span> 
+<div class="highlight"><pre><span></span>albedo R         | albedo G        | albedo B                   | ambient occlusion
+normal X         | normal Y        | spec. intensity / emissive | gloss / cel shaded 
 </pre></div>
 
 
