@@ -1,20 +1,31 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:og="http://ogp.me/ns#"
-      xmlns:fb="https://www.facebook.com/2008/fbml">
+<html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
 <head>
     <title>Shader Generation - Nosferalatu</title>
     <!-- Using the latest rendering mode for IE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
 
-    <!-- Open Graph tags -->
-            <meta property="og:type" content="article"/>
-            <meta property="og:title" content="Shader Generation"/>
-            <meta property="og:url" content="/ShaderGeneration.html"/>
-            <meta property="og:description" content="Shader Generation"/>
+
+
+<link rel="canonical" href="/ShaderGeneration.html">
+
+        <meta name="author" content="David Farrell" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Shader Generation" />
+
+        <meta property="og:site_name" content="Nosferalatu" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Shader Generation"/>
+        <meta property="og:url" content="/ShaderGeneration.html"/>
+        <meta property="og:description" content="Shader Generation"/>
+        <meta property="article:published_time" content="2014-12-31" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:author" content="David Farrell" />
+
+
 
     <!-- Bootstrap -->
         <link rel="stylesheet" href="/theme/css/bootstrap.yeti.min.css" type="text/css"/>
@@ -23,6 +34,7 @@
     <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
     <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
         <link href="/static/custom.css" rel="stylesheet">
+
 
 
 </head>
@@ -53,17 +65,19 @@ Nosferalatu            </a>
                         </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="/archives.html"><i class="fa fa-th-list"></i><span class="icon-label">Archives</span></a></li>
             </ul>
         </div>
         <!-- /.navbar-collapse -->
     </div>
 </div> <!-- /.navbar -->
 
+<!-- Banner -->
+<!-- End Banner -->
+
+<!-- Content Container -->
 <div class="container">
     <div class="row">
         <div class="col-sm-9">
-
     <section id="content">
         <article>
             <header class="page-header">
@@ -83,6 +97,8 @@ Nosferalatu            </a>
     <span class="published">
         <i class="fa fa-calendar"></i><time datetime="2014-12-31T12:00:00-08:00"> Wed 31 December 2014</time>
     </span>
+
+
 
 
 
@@ -109,16 +125,16 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;MyNewSimpleShader&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderVS&quot;</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderPS&quot;</span>
 </pre></div>
 
 
 <p>Here's a slightly more complex example where we set up render state to turn on alpha blending for the shader. The .fx file is the same, but the .fx.lua has changed:</p>
-<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;MyNewSimpleShader&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderVS&quot;</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderPS&quot;</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">AlphaBlendEnable</span> <span class="o">=</span> <span class="kc">true</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">SrcBlend</span> <span class="o">=</span> <span class="n">BlendMode</span><span class="p">.</span><span class="n">SrcAlpha</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">DstBlend</span> <span class="o">=</span> <span class="n">BlendMode</span><span class="p">.</span><span class="n">InvSrcAlpha</span>
@@ -153,15 +169,15 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">MyNewSimpleShader&quot;</span><span class="p">)</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;</span><span class="s">g_bOutputBlue&quot;</span> <span class="p">}</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;MyNewSimpleShader&quot;</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;g_bOutputBlue&quot;</span> <span class="p">}</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
     <span class="kd">local</span> <span class="n">technique</span> <span class="o">=</span> <span class="n">Technique</span><span class="p">()</span>
-    <span class="n">technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderVS&quot;</span>
-    <span class="n">technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">SimpleShaderPS&quot;</span>
+    <span class="n">technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderVS&quot;</span>
+    <span class="n">technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderPS&quot;</span>
 
-    <span class="k">return</span> <span class="n">technique</span><span class="p">,</span> <span class="n">permutation</span>
-<span class="k">end</span>
+    <span class="kr">return</span> <span class="n">technique</span><span class="p">,</span> <span class="n">permutation</span>
+<span class="kr">end</span>
 </pre></div>
 
 
@@ -172,48 +188,48 @@ Nosferalatu            </a>
 <p>The <code>Specialize()</code> function doesn't have to return the same branch values that are passed in. Obviously, 2^N different variants becomes prohibitively expensive. Often, though, shader variants can be combined together, or are mutually exclusive. The <code>Specialize()</code> function in Lua can guide this process and reduce the number of variants from the millions to just a few hundred.</p>
 <p>The important thing to note is that for N boolean branches, we have 2^N permutations of values, each of which are mapped through the specialization function, which returns a technique. We find the unique shaders from that set of techniques and send those to the platform-specific shader compiler.</p>
 <p>Here's an example from Massive Chalice, where we have 14 different branches for our main mesh shader, but fewer actual variants:</p>
-<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">RenderMesh&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;RenderMesh&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;</span><span class="s">g_bBinaryAlpha&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bBloom&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bDebug&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bDepth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bDepthAsColor&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bMultiLayer&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bFoliage&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bForwardLighting&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bShadowCast&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bShadowCastDepthAsColor&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bShadowRec&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bShadowProjected&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bSkinning&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="s">g_bTransparent&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bBinaryAlpha&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bBloom&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bDebug&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bDepth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bDepthAsColor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bMultiLayer&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bFoliage&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bForwardLighting&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bShadowCast&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bShadowCastDepthAsColor&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bShadowRec&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bShadowProjected&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bSkinning&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_bTransparent&quot;</span><span class="p">,</span>
 <span class="p">}</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Specialize</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">permutation</span><span class="p">)</span>
     <span class="kd">local</span> <span class="n">specializedtechnique</span> <span class="o">=</span> <span class="n">Technique</span><span class="p">()</span>
-    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshVS&quot;</span>
-    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshPS&quot;</span>
+    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;RenderMeshVS&quot;</span>
+    <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;RenderMeshPS&quot;</span>
     <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span> <span class="o">=</span> <span class="n">DefaultRenderState</span>
 
-    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bSkinning</span> <span class="k">then</span>
+    <span class="kr">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bSkinning</span> <span class="kr">then</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bFoliage</span> <span class="o">=</span> <span class="kc">false</span>
-    <span class="k">end</span>
+    <span class="kr">end</span>
 
-    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bFoliage</span> <span class="k">then</span>
+    <span class="kr">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bFoliage</span> <span class="kr">then</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bMultiLayer</span> <span class="o">=</span> <span class="kc">false</span>
-    <span class="k">end</span>
+    <span class="kr">end</span>
 
     <span class="c1">-- only RENDERER_DX9 uses DepthAsColor/ShadowCastDepthAsColor. Other platforms use Depth/ShadowCast.</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">RENDERER_DX9</span> <span class="k">then</span>
+    <span class="kr">if</span> <span class="ow">not</span> <span class="n">RENDERER_DX9</span> <span class="kr">then</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="o">=</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="o">=</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
-    <span class="k">end</span>
+    <span class="kr">end</span>
 
-    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="k">then</span>
-        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshVSDepth&quot;</span>
-        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshPSDepth&quot;</span>
+    <span class="kr">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="kr">then</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;RenderMeshVSDepth&quot;</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;RenderMeshPSDepth&quot;</span>
 
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
@@ -223,12 +239,12 @@ Nosferalatu            </a>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowRec</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="o">=</span> <span class="kc">false</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="k">then</span>
+        <span class="kr">if</span> <span class="ow">not</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="kr">then</span>
             <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ColorWriteState</span> <span class="o">=</span> <span class="n">ColorWriteState</span><span class="p">.</span><span class="n">____</span>
-        <span class="k">end</span>
-    <span class="k">elseif</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="k">then</span>
-        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshVSDepth&quot;</span>
-        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">RenderMeshPSDepth&quot;</span>
+        <span class="kr">end</span>
+    <span class="kr">elseif</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="ow">or</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="kr">then</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;RenderMeshVSDepth&quot;</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;RenderMeshPSDepth&quot;</span>
 
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
@@ -239,30 +255,30 @@ Nosferalatu            </a>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowProjected</span> <span class="o">=</span> <span class="kc">false</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="k">then</span>
+        <span class="kr">if</span> <span class="ow">not</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="kr">then</span>
             <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ColorWriteState</span> <span class="o">=</span> <span class="n">ColorWriteState</span><span class="p">.</span><span class="n">____</span>
-        <span class="k">end</span>
-    <span class="k">else</span>
+        <span class="kr">end</span>
+    <span class="kr">else</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCast</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bShadowCastDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepth</span> <span class="o">=</span> <span class="kc">false</span>
         <span class="n">permutation</span><span class="p">.</span><span class="n">g_bDepthAsColor</span> <span class="o">=</span> <span class="kc">false</span>
 
-        <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="k">then</span>
+        <span class="kr">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bTransparent</span> <span class="kr">then</span>
             <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">RenderState</span> <span class="o">=</span> <span class="n">AlphaBlendRenderState</span>
             <span class="n">permutation</span><span class="p">.</span><span class="n">g_bForwardLighting</span> <span class="o">=</span> <span class="kc">true</span>
-        <span class="k">else</span>
+        <span class="kr">else</span>
             <span class="n">permutation</span><span class="p">.</span><span class="n">g_bForwardLighting</span> <span class="o">=</span> <span class="kc">false</span>
-        <span class="k">end</span>
-    <span class="k">end</span>
+        <span class="kr">end</span>
+    <span class="kr">end</span>
 
-    <span class="k">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bSkinning</span> <span class="k">then</span>
-        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexFormat</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="s">kVERTTYPE_Skin_Compact&quot;</span>
+    <span class="kr">if</span> <span class="n">permutation</span><span class="p">.</span><span class="n">g_bSkinning</span> <span class="kr">then</span>
+        <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">VertexFormat</span> <span class="o">=</span> <span class="s2">&quot;kVERTTYPE_Skin_Compact&quot;</span>
         <span class="n">specializedtechnique</span><span class="p">.</span><span class="n">Defines</span> <span class="o">=</span> <span class="p">{</span> <span class="n">USE_SKINNING</span><span class="o">=</span><span class="mi">1</span> <span class="p">}</span>
-    <span class="k">end</span>
+    <span class="kr">end</span>
 
-    <span class="k">return</span> <span class="n">specializedtechnique</span><span class="p">,</span> <span class="n">permutation</span>
-<span class="k">end</span>
+    <span class="kr">return</span> <span class="n">specializedtechnique</span><span class="p">,</span> <span class="n">permutation</span>
+<span class="kr">end</span>
 </pre></div>
 
 
@@ -294,15 +310,15 @@ Nosferalatu            </a>
 </ul>
 <h3>Runtime</h3>
 <p>At runtime, we set the branch values as booleans in a constant buffer: </p>
-<div class="highlight"><pre><span></span>pRenderContext-&gt;SetShaderBool(g_bShadowCast, false);
-pRenderContext-&gt;SetShaderBool(g_bSkinning, mesh-&gt;has_skinning_data());
-...
+<div class="highlight"><pre><span></span><span class="err">pRenderContext-&gt;SetShaderBool(g_bShadowCast, false);</span>
+<span class="err">pRenderContext-&gt;SetShaderBool(g_bSkinning, mesh-&gt;has_skinning_data());</span>
+<span class="err">...</span>
 </pre></div>
 
 
 <p>Then we set the shader and draw:</p>
-<div class="highlight"><pre><span></span>pRenderContext-&gt;SetShader(MeshShader);
-pRenderContext-&gt;Draw(mesh);
+<div class="highlight"><pre><span></span><span class="err">pRenderContext-&gt;SetShader(MeshShader);</span>
+<span class="err">pRenderContext-&gt;Draw(mesh);</span>
 </pre></div>
 
 
@@ -314,35 +330,35 @@ pRenderContext-&gt;Draw(mesh);
 <span class="c1">-- By default, pairs/ipairs will not call the metatable&#39;s __index field, which doesn&#39;t work with</span>
 <span class="c1">-- our controlled-access tables.</span>
 <span class="n">rawpairs</span><span class="p">,</span> <span class="n">rawipairs</span> <span class="o">=</span> <span class="nb">pairs</span><span class="p">,</span> <span class="nb">ipairs</span>
-<span class="k">function</span> <span class="nf">pairs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__pairs</span> <span class="ow">or</span> <span class="n">rawpairs</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="k">end</span>
-<span class="k">function</span> <span class="nf">ipairs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__ipairs</span> <span class="ow">or</span> <span class="n">rawipairs</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="k">end</span>
+<span class="kr">function</span> <span class="nf">pairs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="kr">return</span> <span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__pairs</span> <span class="ow">or</span> <span class="n">rawpairs</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="kr">end</span>
+<span class="kr">function</span> <span class="nf">ipairs</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="kr">return</span> <span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__ipairs</span> <span class="ow">or</span> <span class="n">rawipairs</span><span class="p">)(</span><span class="n">t</span><span class="p">)</span> <span class="kr">end</span>
 
 <span class="c1">-- Return a read-only enum. Keys can be read, but neither created nor changed.</span>
 <span class="c1">-- The input should be a table of strings, one for each enum type.</span>
-<span class="k">function</span> <span class="nf">ReadOnlyEnum</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="k">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="k">do</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">~=</span> <span class="s2">&quot;</span><span class="s">string&quot;</span> <span class="k">then</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">Enum entries must be strings&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">end</span> <span class="k">end</span>
+<span class="kr">function</span> <span class="nf">ReadOnlyEnum</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+    <span class="kr">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="kr">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="kr">do</span> <span class="kr">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">~=</span> <span class="s2">&quot;string&quot;</span> <span class="kr">then</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;Enum entries must be strings&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="kr">end</span> <span class="kr">end</span>
 
     <span class="kd">local</span> <span class="n">__table</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="k">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="k">do</span> <span class="n">__table</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span> <span class="k">end</span>
+    <span class="kr">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="kr">in</span> <span class="nb">pairs</span><span class="p">(</span><span class="n">table</span><span class="p">)</span> <span class="kr">do</span> <span class="n">__table</span><span class="p">[</span><span class="n">v</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span> <span class="kr">end</span>
 
     <span class="kd">local</span> <span class="n">newtable_mt</span> <span class="o">=</span> <span class="p">{</span>
-       <span class="n">__newindex</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">Attempt to modify an enum&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">end</span><span class="p">,</span>
-       <span class="n">__index</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">~=</span> <span class="kc">nil</span> <span class="k">then</span> <span class="k">return</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
-                               <span class="k">else</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">Unknown enum value &#39;&quot;</span> <span class="o">..</span> <span class="nb">tostring</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">..</span> <span class="s2">&quot;</span><span class="s">&#39;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">end</span> <span class="k">end</span><span class="p">,</span>
-       <span class="n">__pairs</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="nb">pairs</span><span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">)</span> <span class="k">end</span><span class="p">,</span>
-       <span class="n">__ipairs</span> <span class="o">=</span> <span class="k">function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">return</span> <span class="nb">ipairs</span><span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">)</span> <span class="k">end</span><span class="p">,</span>
+       <span class="n">__newindex</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">k</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;Attempt to modify an enum&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="kr">end</span><span class="p">,</span>
+       <span class="n">__index</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">k</span><span class="p">)</span> <span class="kr">if</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">~=</span> <span class="kc">nil</span> <span class="kr">then</span> <span class="kr">return</span> <span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                               <span class="kr">else</span> <span class="nb">error</span><span class="p">(</span><span class="s2">&quot;Unknown enum value &#39;&quot;</span> <span class="o">..</span> <span class="nb">tostring</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">..</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="kr">end</span> <span class="kr">end</span><span class="p">,</span>
+       <span class="n">__pairs</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="kr">return</span> <span class="nb">pairs</span><span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">)</span> <span class="kr">end</span><span class="p">,</span>
+       <span class="n">__ipairs</span> <span class="o">=</span> <span class="kr">function</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="kr">return</span> <span class="nb">ipairs</span><span class="p">(</span><span class="nb">getmetatable</span><span class="p">(</span><span class="n">t</span><span class="p">).</span><span class="n">__table</span><span class="p">)</span> <span class="kr">end</span><span class="p">,</span>
        <span class="n">__table</span> <span class="o">=</span> <span class="n">__table</span>
     <span class="p">}</span>
 
-    <span class="k">return</span> <span class="nb">setmetatable</span><span class="p">({},</span> <span class="n">newtable_mt</span><span class="p">)</span>
-<span class="k">end</span>
+    <span class="kr">return</span> <span class="nb">setmetatable</span><span class="p">({},</span> <span class="n">newtable_mt</span><span class="p">)</span>
+<span class="kr">end</span>
 </pre></div>
 
 
 <p>We can use the above code to set up some enums like this:</p>
-<div class="highlight"><pre><span></span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Solid&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Wireframe&quot;</span><span class="p">}</span>
-<span class="n">CullMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">CW&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">CCW&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">None&quot;</span><span class="p">}</span>
-<span class="n">ComparisonFunc</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;</span><span class="s">Never&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Less&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Equal&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">LEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Greater&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">NotEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">GEqual&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="s">Always&quot;</span><span class="p">}</span>
+<div class="highlight"><pre><span></span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;Solid&quot;</span><span class="p">,</span><span class="s2">&quot;Wireframe&quot;</span><span class="p">}</span>
+<span class="n">CullMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;CW&quot;</span><span class="p">,</span><span class="s2">&quot;CCW&quot;</span><span class="p">,</span><span class="s2">&quot;None&quot;</span><span class="p">}</span>
+<span class="n">ComparisonFunc</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;Never&quot;</span><span class="p">,</span><span class="s2">&quot;Less&quot;</span><span class="p">,</span><span class="s2">&quot;Equal&quot;</span><span class="p">,</span><span class="s2">&quot;LEqual&quot;</span><span class="p">,</span><span class="s2">&quot;Greater&quot;</span><span class="p">,</span><span class="s2">&quot;NotEqual&quot;</span><span class="p">,</span><span class="s2">&quot;GEqual&quot;</span><span class="p">,</span><span class="s2">&quot;Always&quot;</span><span class="p">}</span>
 </pre></div>
 
 
@@ -370,33 +386,33 @@ stack traceback:
 <p>We use <a href="http://mcpp.sourceforge.net/">mcpp</a> to preprocess the shaders. You can read more about mcpp at that page. We put the macro definitions into a Lua table so that the same constants used in the .fx files can be used in the .fx.lua file. There are no duplicated constants between the HLSL and Lua code, and we don't have to do something unorthodox like run the C preprocessor over the Lua files.</p>
 <p>The problem, though, is that we want to know the values of the macro defines <em>after</em> they have been preprocessed. For example, given <code>#define MACRO_A 1</code> and <code>#define MACRO_B MACRO_A</code>, we want to set MACRO_A to 1 and MACRO_B to 1. mcpp makes these easy with its <code>put_defines</code> pragma, which outputs the macro definitions at that point in the file.</p>
 <p>When we run <code>mcpp.exe -z -j -P ShaderCommon.h</code> with <code>#pragma mcpp put_defines</code> at the end of the file, we get output like this:</p>
-<div class="highlight"><pre><span></span><span class="cm">/* Currently defined macros. */</span><span class="w"></span>
-<span class="err">#</span>define<span class="w"> </span>kIMAGE_PROCESS_STENCIL_BIT<span class="w"> </span><span class="m">128</span><span class="w">  </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */</span><span class="w"></span>
-<span class="err">#</span>define<span class="w"> </span>kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT<span class="w"> </span><span class="m">96</span><span class="w">      </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */</span><span class="w"></span>
-<span class="err">#</span>define<span class="w"> </span>kDEFAULT_MIN_TEXTURE_ALPHA<span class="w"> </span><span class="o">(</span><span class="m">1</span><span class="o">.</span>f<span class="o">)</span><span class="w">        </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:132    */</span><span class="w"></span>
-<span class="err">#</span>define<span class="w"> </span>kPROJECT_LIGHT_STENCIL_BIT<span class="w"> </span><span class="m">64</span><span class="w">   </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:115    */</span><span class="w"></span>
-<span class="err">#</span>define<span class="w"> </span>kSHADOW_RECEIVER_STENCIL_BIT<span class="w"> </span><span class="m">128</span><span class="w">        </span><span class="cm">/* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:124    */</span><span class="w"></span>
-<span class="o">...</span><span class="w"></span>
+<div class="highlight"><pre><span></span><span class="err">/* Currently defined macros. */</span>
+<span class="err">#define kIMAGE_PROCESS_STENCIL_BIT 128  /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */</span>
+<span class="err">#define kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT 96      /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */</span>
+<span class="err">#define kDEFAULT_MIN_TEXTURE_ALPHA (1.f)        /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:132    */</span>
+<span class="err">#define kPROJECT_LIGHT_STENCIL_BIT 64   /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:115    */</span>
+<span class="err">#define kSHADOW_RECEIVER_STENCIL_BIT 128        /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:124    */</span>
+<span class="err">...</span>
 </pre></div>
 
 
 <p>We parse the above #define's into key/value pairs and put them into a Lua table named cpp:</p>
 <div class="highlight"><pre><span></span><span class="n">cpp</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="k">function</span> <span class="nf">rtrim</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">return</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span><span class="n">gsub</span><span class="p">(</span><span class="s2">&quot;</span><span class="s">%s*$&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">&quot;</span><span class="p">))</span> <span class="k">end</span>
-<span class="k">function</span> <span class="nf">RegisterMacros</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="k">in</span> <span class="nb">string.gmatch</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">([^</span><span class="se">\n</span><span class="s">]+)&quot;</span><span class="p">)</span> <span class="k">do</span>
-        <span class="kd">local</span> <span class="n">name</span><span class="p">,</span><span class="n">value</span> <span class="o">=</span> <span class="nb">string.match</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="s2">&quot;</span><span class="s">^#define (%S+) (.+)%s+/%*&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="k">then</span> <span class="n">cpp</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">rtrim</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">end</span>
-    <span class="k">end</span>
-<span class="k">end</span>
+<span class="kr">function</span> <span class="nf">rtrim</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="kr">return</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span><span class="n">gsub</span><span class="p">(</span><span class="s2">&quot;%s*$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span> <span class="kr">end</span>
+<span class="kr">function</span> <span class="nf">RegisterMacros</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+    <span class="kr">for</span> <span class="n">line</span> <span class="kr">in</span> <span class="nb">string.gmatch</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="s2">&quot;([^</span><span class="se">\n</span><span class="s2">]+)&quot;</span><span class="p">)</span> <span class="kr">do</span>
+        <span class="kd">local</span> <span class="n">name</span><span class="p">,</span><span class="n">value</span> <span class="o">=</span> <span class="nb">string.match</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="s2">&quot;^#define (%S+) (.+)%s+/%*&quot;</span><span class="p">)</span>
+        <span class="kr">if</span> <span class="n">name</span> <span class="kr">then</span> <span class="n">cpp</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">rtrim</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="kr">end</span>
+    <span class="kr">end</span>
+<span class="kr">end</span>
 </pre></div>
 
 
 <p>Now we can use them anywhere in the .fx.lua files:</p>
 <div class="highlight"><pre><span></span><span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilEnable</span> <span class="o">=</span> <span class="kc">true</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilRef</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;</span><span class="s">kDYNAMIC_MESH_STENCIL_BIT&quot;</span><span class="p">])</span>
-<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilWriteMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;</span><span class="s">kPROJECT_LIGHT_STENCIL_BIT&quot;</span><span class="p">])</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;kDYNAMIC_MESH_STENCIL_BIT&quot;</span><span class="p">])</span>
+<span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilWriteMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;kPROJECT_LIGHT_STENCIL_BIT&quot;</span><span class="p">])</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilFunc</span> <span class="o">=</span> <span class="n">ComparisonFunc</span><span class="p">.</span><span class="n">Equal</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilPass</span> <span class="o">=</span> <span class="n">Stencil</span><span class="p">.</span><span class="n">Invert</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilFail</span> <span class="o">=</span> <span class="n">Stencil</span><span class="p">.</span><span class="n">Keep</span>
@@ -408,50 +424,51 @@ stack traceback:
     </section>
 
         </div>
-        <div class="col-sm-3 well well-sm" id="sidebar">
+        <div class="col-sm-3" id="sidebar">
+            <aside>
+<!-- Sidebar -->
+<section class="well well-sm">
+  <ul class="list-group list-group-flush">
 
-<aside>
-    <section>
-        <ul class="list-group list-group-flush">
-                <li class="list-group-item"><h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
-                  <ul class="list-group" id="social">
-                    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i
-                            class="fa fa-twitter-square fa-lg"></i> twitter
-                    </a></li>
-                    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i
-                            class="fa fa-github-square fa-lg"></i> github
-                    </a></li>
-                  </ul>
-                </li>
-
-
-
-
-        </ul>
-    </section>
-
-</aside>        </div>
+<!-- Sidebar/Social -->
+<li class="list-group-item">
+  <h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+  <ul class="list-group" id="social">
+    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i class="fa fa-twitter-square fa-lg"></i> twitter</a></li>
+    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i class="fa fa-github-square fa-lg"></i> github</a></li>
+  </ul>
+</li>
+<!-- End Sidebar/Social -->
+  </ul>
+</section>
+<!-- End Sidebar -->            </aside>
+        </div>
     </div>
 </div>
+<!-- End Content Container -->
+
 <footer>
    <div class="container">
       <hr>
       <div class="row">
          <div class="col-xs-10">&copy; 2016 David Farrell
-            &middot; Powered by <a href="https://github.com/DandyDev/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
             <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
             <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
          <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
       </div>
    </div>
 </footer>
-<script src="//code.jquery.com/jquery.js"></script>
+<script src="/theme/js/jquery.min.js"></script>
 
 <!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="/theme/js/bootstrap.min.js"></script>
 
 <!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
 <script src="/theme/js/respond.min.js"></script>
+
+
+
 
 </body>
 </html>
