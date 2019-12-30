@@ -188,6 +188,9 @@ EXTRA_PATH_METADATA = {&#39;extra\custom.css&#39;: {&#39;path&#39;: &#39;static\
 </pre></div>
 
 
+<h2>Google&nbsp;Analytics</h2>
+<p>Google Analytics can be set up by following the instructions here: <a href="https://matthewdevaney.com/posts/2019/03/17/google-analytics-with-pelican/">Google Analytics With&nbsp;Pelican</a></p>
+<p>Once you have modified the publishconf.py with your analytics tracking number, you need to run the command <code>make publish</code> instead of <code>make html</code> to have the tracking code included. You want to <code>make publish</code> once you are ready to generate the pages that will go live, and <code>make html</code> when you are generating pages to view your changes&nbsp;locally.</p>
 <h2>Github Pages&nbsp;Hosting</h2>
 <p>I&#8217;m using <a href="https://pages.github.com/">Github Pages</a> to host this blog. I created two repositories. One is named <code>nosferalatu.github.io</code> and holds the blog site, and the other is named <code>nosferalatu.github.io.source</code> and holds the Pelican source for the blog. You can configure git branches to hold everything in a single repo, but I thought it was more straightforward to just use two&nbsp;repositories.</p>
 <p>I cleaned up the <code>themes</code> directory to remove the themes I don&#8217;t want (otherwise, that directory is around 176 megs). I then init both repositories and push them to Github with&nbsp;this:</p>
