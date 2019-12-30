@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
 <head>
-    <title>Shader Generation - Nosferalatu</title>
+    <title>Shader Generation - Nosferalatu</title>
     <!-- Using the latest rendering mode for IE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
@@ -13,13 +13,13 @@
 
         <meta name="author" content="David Farrell" />
         <meta name="keywords" content="Programming" />
-        <meta name="description" content="Shader Generation" />
+        <meta name="description" content="Shader Generation" />
 
         <meta property="og:site_name" content="Nosferalatu" />
         <meta property="og:type" content="article"/>
-        <meta property="og:title" content="Shader Generation"/>
+        <meta property="og:title" content="Shader Generation"/>
         <meta property="og:url" content="/ShaderGeneration.html"/>
-        <meta property="og:description" content="Shader Generation"/>
+        <meta property="og:description" content="Shader Generation"/>
         <meta property="article:published_time" content="2014-12-31" />
             <meta property="article:section" content="Blog" />
             <meta property="article:tag" content="Programming" />
@@ -32,6 +32,7 @@
     <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
 
     <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="/theme/css/typogrify.css" rel="stylesheet">
     <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
         <link href="/static/custom.css" rel="stylesheet">
 
@@ -84,8 +85,8 @@ Nosferalatu            </a>
                 <h1>
                     <a href="/ShaderGeneration.html"
                        rel="bookmark"
-                       title="Permalink to Shader Generation">
-                        Shader Generation
+                       title="Permalink to Shader Generation">
+                        Shader&nbsp;Generation
                     </a>
                 </h1>
             </header>
@@ -107,11 +108,11 @@ Nosferalatu            </a>
     
 </footer><!-- /.post-info -->                    </div>
                 </div>
-                <p>About a year ago, we decided to rewrite our shader generation system at Double Fine. The new system has been used in Massive Chalice, Costume Quest 2, and our Amnesia Fortnight projects, and has worked out well. Goals of the rewrite were to make the system as data driven as possible, emit correct error line numbers, and make it easier to generate many variants of the same shader.</p>
-<p>I say shader generation because this system manipulates the shader source code but doesn't actually do any compilation itself. It still sends everything through the platform shader compilers, such as D3D's FXC.EXE. (Nevertheless, the tool is actually called ShaderCompiler at Double Fine!)</p>
-<p>At a high level, you write HLSL as you normally would, and also write a small file in Lua to specify the additional information needed for the graphics pipeline. These two files sit side-by-side. We separate the HLSL and Lua code into different files so that text editors can edit the files in either HLSL mode or Lua mode, but you could alternatively embed HLSL as strings in Lua and keep it all in one file.</p>
-<p>To manage ubershaders, the Lua file contains a function called <code>Specialize()</code> that controls how to generate variants of the ubershader. I'll explain more about how that works below.</p>
-<p>Here's a simple example of a shader that outputs a green triangle. The first block is an .fx file and the second is the corresponding .fx.lua file:</p>
+                <p>About a year ago, we decided to rewrite our shader generation system at Double Fine. The new system has been used in Massive Chalice, Costume Quest 2, and our Amnesia Fortnight projects, and has worked out well. Goals of the rewrite were to make the system as data driven as possible, emit correct error line numbers, and make it easier to generate many variants of the same&nbsp;shader.</p>
+<p>I say shader generation because this system manipulates the shader source code but doesn&#8217;t actually do any compilation itself. It still sends everything through the platform shader compilers, such as <span class="caps">D3D</span>&#8217;s <span class="caps">FXC</span>.<span class="caps">EXE</span>. (Nevertheless, the tool is actually called ShaderCompiler at Double&nbsp;Fine!)</p>
+<p>At a high level, you write <span class="caps">HLSL</span> as you normally would, and also write a small file in Lua to specify the additional information needed for the graphics pipeline. These two files sit side-by-side. We separate the <span class="caps">HLSL</span> and Lua code into different files so that text editors can edit the files in either <span class="caps">HLSL</span> mode or Lua mode, but you could alternatively embed <span class="caps">HLSL</span> as strings in Lua and keep it all in one&nbsp;file.</p>
+<p>To manage ubershaders, the Lua file contains a function called <code>Specialize()</code> that controls how to generate variants of the ubershader. I&#8217;ll explain more about how that works&nbsp;below.</p>
+<p>Here&#8217;s a simple example of a shader that outputs a green triangle. The first block is an .fx file and the second is the corresponding .fx.lua&nbsp;file:</p>
 <div class="highlight"><pre><span></span><span class="n">float4</span> <span class="nf">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="nl">vertexid</span> <span class="p">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
 <span class="p">{</span>
     <span class="n">float4</span> <span class="n">pos</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">}</span> <span class="p">};</span>
@@ -131,7 +132,7 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<p>Here's a slightly more complex example where we set up render state to turn on alpha blending for the shader. The .fx file is the same, but the .fx.lua has changed:</p>
+<p>Here&#8217;s a slightly more complex example where we set up render state to turn on alpha blending for the shader. The .fx file is the same, but the .fx.lua has&nbsp;changed:</p>
 <div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;MyNewSimpleShader&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">VertexShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderVS&quot;</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">PixelShader</span> <span class="o">=</span> <span class="s2">&quot;SimpleShaderPS&quot;</span>
@@ -141,16 +142,16 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<p>Lua is used only for offline shader generation and not at runtime by the graphics system. Lua was our choice because it is easy to interop with C code, it is malleable and works well as a data definition language, and it was already deeply embedded in our existing C codebase. Lua is trivial to parse (just execute the Lua code!) and you have an expressive programming language at your fingertips. Many other languages, particularly dynamic languages such as Python, have similar properties and would also work well.</p>
-<h3>Shader Specialization</h3>
-<p>First, a few definitions of the terms we'll use below:</p>
+<p>Lua is used only for offline shader generation and not at runtime by the graphics system. Lua was our choice because it is easy to interop with C code, it is malleable and works well as a data definition language, and it was already deeply embedded in our existing C codebase. Lua is trivial to parse (just execute the Lua code!) and you have an expressive programming language at your fingertips. Many other languages, particularly dynamic languages such as Python, have similar properties and would also work&nbsp;well.</p>
+<h3>Shader&nbsp;Specialization</h3>
+<p>First, a few definitions of the terms we&#8217;ll use&nbsp;below:</p>
 <ul>
-<li><code>shader</code> means a collection of techniques and branches. This is what the game engine uses to associate a mesh with a shader</li>
-<li><code>technique</code> means a vertex/pixel shader pair and render state. The word pipeline can also be used to describe a technique. A shader has 1 or more techniques (actually, 2^N, where N=the number of branches)</li>
-<li><code>branch</code> means a boolean value that is evaluated either statically at shader generation time or dynamically by the GPU at runtime. These appear as global boolean parameters in the HLSL code</li>
+<li><code>shader</code> means a collection of techniques and branches. This is what the game engine uses to associate a mesh with a&nbsp;shader</li>
+<li><code>technique</code> means a vertex/pixel shader pair and render state. The word pipeline can also be used to describe a technique. A shader has 1 or more techniques (actually, 2^N, where N=the number of&nbsp;branches)</li>
+<li><code>branch</code> means a boolean value that is evaluated either statically at shader generation time or dynamically by the <span class="caps">GPU</span> at runtime. These appear as global boolean parameters in the <span class="caps">HLSL</span>&nbsp;code</li>
 </ul>
-<p>At runtime, the game sets which shader to use and sets the values of the branch booleans. The rendering code then uses the boolean values to select which technique in the shader should be used by the GPU.</p>
-<p>In the example above, the shader code has exactly one technique because it has no branches. Here's an example of a shader that has one branch and outputs either green or blue:</p>
+<p>At runtime, the game sets which shader to use and sets the values of the branch booleans. The rendering code then uses the boolean values to select which technique in the shader should be used by the <span class="caps">GPU</span>.</p>
+<p>In the example above, the shader code has exactly one technique because it has no branches. Here&#8217;s an example of a shader that has one branch and outputs either green or&nbsp;blue:</p>
 <div class="highlight"><pre><span></span><span class="kt">bool</span> <span class="n">g_bOutputBlue</span><span class="p">;</span>
 
 <span class="n">float4</span> <span class="nf">SimpleShaderVS</span><span class="p">(</span><span class="kt">int</span> <span class="nl">vertexid</span> <span class="p">:</span> <span class="n">SV_VERTEXID</span><span class="p">)</span> <span class="o">:</span> <span class="n">SV_POSITION</span>
@@ -181,13 +182,13 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<p>The <code>Specialize()</code> function returns a Technique, so it can customize the shader entry points, render state, etc. The Technique object can also specify technique-specific macro defines, which are useful to customize a shader for things that can't be toggled with an HLSL if(), such as the list of interpolators. <code>Specialize()</code> also returns a modified set of branch values that are later substituted into the HLSL source code.</p>
-<p>The above .fx has one branch (g_bOutputBlue) and so it has 2^N = 2^1 = 2 different shader variants that are compiled. The first variant is compiled with g_bOutputBlue set to false, and the second variant has g_bOutputBlue set to true. We <em>specialize</em> the .fx shader code by substituting the text <code>g_bOutputBlue</code> for the text <code>true</code> or the text <code>false</code>, depending on which variant we are compiling, before we send that shader variant to the platform shader compiler.</p>
-<p>If we want to evaluate the branch at runtime by the GPU instead of at compile time, all we have to do is remove <code>g_bOutputBlue</code> from the list of branches in the .fx.lua file. The <code>g_bOutputBlue</code> stays with the shader as a global boolean parameter and becomes a runtime branch. This flexibility is useful for experiments to determine if it's worthwhile to trade off memory and more shader program switches for a more specialized shader, or if the cost of shader specialization is too high. It's also good for cross platform code, since different GPUs handle dynamic branching in different ways. The code is also much easier to read than using C preprocessor macros and sprinkling lots of <code>#if LOTS_OF_CPP_DEFINE_TESTING</code> all over the place. It does rely on the platform shader compiler to do deadcode elimination, but that's true of all the compilers I've seen, even when their other optimization passes aren't as solid.</p>
-<h3>Better Shader Specialization</h3>
-<p>The <code>Specialize()</code> function doesn't have to return the same branch values that are passed in. Obviously, 2^N different variants becomes prohibitively expensive. Often, though, shader variants can be combined together, or are mutually exclusive. The <code>Specialize()</code> function in Lua can guide this process and reduce the number of variants from the millions to just a few hundred.</p>
-<p>The important thing to note is that for N boolean branches, we have 2^N permutations of values, each of which are mapped through the specialization function, which returns a technique. We find the unique shaders from that set of techniques and send those to the platform-specific shader compiler.</p>
-<p>Here's an example from Massive Chalice, where we have 14 different branches for our main mesh shader, but fewer actual variants:</p>
+<p>The <code>Specialize()</code> function returns a Technique, so it can customize the shader entry points, render state, etc. The Technique object can also specify technique-specific macro defines, which are useful to customize a shader for things that can&#8217;t be toggled with an <span class="caps">HLSL</span> if(), such as the list of interpolators. <code>Specialize()</code> also returns a modified set of branch values that are later substituted into the <span class="caps">HLSL</span> source&nbsp;code.</p>
+<p>The above .fx has one branch (g_bOutputBlue) and so it has 2^N = 2^1 = 2 different shader variants that are compiled. The first variant is compiled with g_bOutputBlue set to false, and the second variant has g_bOutputBlue set to true. We <em>specialize</em> the .fx shader code by substituting the text <code>g_bOutputBlue</code> for the text <code>true</code> or the text <code>false</code>, depending on which variant we are compiling, before we send that shader variant to the platform shader&nbsp;compiler.</p>
+<p>If we want to evaluate the branch at runtime by the <span class="caps">GPU</span> instead of at compile time, all we have to do is remove <code>g_bOutputBlue</code> from the list of branches in the .fx.lua file. The <code>g_bOutputBlue</code> stays with the shader as a global boolean parameter and becomes a runtime branch. This flexibility is useful for experiments to determine if it&#8217;s worthwhile to trade off memory and more shader program switches for a more specialized shader, or if the cost of shader specialization is too high. It&#8217;s also good for cross platform code, since different GPUs handle dynamic branching in different ways. The code is also much easier to read than using C preprocessor macros and sprinkling lots of <code>#if LOTS_OF_CPP_DEFINE_TESTING</code> all over the place. It does rely on the platform shader compiler to do deadcode elimination, but that&#8217;s true of all the compilers I&#8217;ve seen, even when their other optimization passes aren&#8217;t as&nbsp;solid.</p>
+<h3>Better Shader&nbsp;Specialization</h3>
+<p>The <code>Specialize()</code> function doesn&#8217;t have to return the same branch values that are passed in. Obviously, 2^N different variants becomes prohibitively expensive. Often, though, shader variants can be combined together, or are mutually exclusive. The <code>Specialize()</code> function in Lua can guide this process and reduce the number of variants from the millions to just a few&nbsp;hundred.</p>
+<p>The important thing to note is that for N boolean branches, we have 2^N permutations of values, each of which are mapped through the specialization function, which returns a technique. We find the unique shaders from that set of techniques and send those to the platform-specific shader&nbsp;compiler.</p>
+<p>Here&#8217;s an example from Massive Chalice, where we have 14 different branches for our main mesh shader, but fewer actual&nbsp;variants:</p>
 <div class="highlight"><pre><span></span><span class="kd">local</span> <span class="n">shader</span> <span class="o">=</span> <span class="n">Shader</span><span class="p">(</span><span class="s2">&quot;RenderMesh&quot;</span><span class="p">)</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Branches</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;g_bBinaryAlpha&quot;</span><span class="p">,</span>
@@ -282,50 +283,50 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<p>When rendering depth-only passes, such as to shadow maps, we can disable (set to false) many of the shader branches such as <code>g_bBloom</code>, <code>g_bMultiLayer</code>, etc. Similarly, when rendering lit passes, we can disable <code>g_bDepth</code>, <code>g_bShadowCast</code>, etc. When rendering transparent passes, we can enable the forward lighting branch.</p>
-<h3>Data Flow</h3>
+<p>When rendering depth-only passes, such as to shadow maps, we can disable (set to false) many of the shader branches such as <code>g_bBloom</code>, <code>g_bMultiLayer</code>, etc. Similarly, when rendering lit passes, we can disable <code>g_bDepth</code>, <code>g_bShadowCast</code>, etc. When rendering transparent passes, we can enable the forward lighting&nbsp;branch.</p>
+<h3>Data&nbsp;Flow</h3>
 <p>The data flow looks like this: <code>(.fx, .fx.lua)</code> -&gt; <code>ShaderCompiler.exe</code> -&gt; <code>platform shader compiler</code> -&gt; <code>.fxo</code></p>
 <ul>
-<li><code>.fx</code> files are written in standard HLSL</li>
-<li><code>.fx.lua</code> files are written in Lua and specify shader metadata and a specialization function (the .fx and .fx.lua files correspond one-to-one to each other)</li>
-<li><code>ShaderCompiler.exe</code> is the Double Fine shader generator program (it doesn't do any real compiling; it delegates that work to the platform shader compiler)</li>
-<li><code>Platform shader compiler</code> is whatever shader compiler is used for the target platform, such as FXC.EXE for Windows</li>
-<li><code>.fxo</code> files are loaded by the game</li>
+<li><code>.fx</code> files are written in standard <span class="caps">HLSL</span></li>
+<li><code>.fx.lua</code> files are written in Lua and specify shader metadata and a specialization function (the .fx and .fx.lua files correspond one-to-one to each&nbsp;other)</li>
+<li><code>ShaderCompiler.exe</code> is the Double Fine shader generator program (it doesn&#8217;t do any real compiling; it delegates that work to the platform shader&nbsp;compiler)</li>
+<li><code>Platform shader compiler</code> is whatever shader compiler is used for the target platform, such as <span class="caps">FXC</span>.<span class="caps">EXE</span> for&nbsp;Windows</li>
+<li><code>.fxo</code> files are loaded by the&nbsp;game</li>
 </ul>
-<p>ShaderCompiler.exe proceeds in this order:</p>
+<p>ShaderCompiler.exe proceeds in this&nbsp;order:</p>
 <ul>
-<li>Run the C preprocessor over the HLSL code; put the #define macros into a Lua table</li>
+<li>Run the C preprocessor over the <span class="caps">HLSL</span> code; put the #define macros into a Lua&nbsp;table</li>
 <li>For each shader declared in the .fx.lua file:<ul>
-<li>Call Specialize() for each of the 2^N permutations to get all the techniques</li>
-<li>Find the unique set of vertex and pixel shaders in those techniques</li>
+<li>Call Specialize() for each of the 2^N permutations to get all the&nbsp;techniques</li>
+<li>Find the unique set of vertex and pixel shaders in those&nbsp;techniques</li>
 <li>For each vertex/pixel shader:<ul>
-<li>Substitute the technique's branch values into the HLSL code</li>
-<li>Run the C preprocessor over the specialized HLSL code to substitute the technique's macro defines into the code</li>
-<li>Call the platform shader compiler on the specialized, preprocessed code</li>
+<li>Substitute the technique&#8217;s branch values into the <span class="caps">HLSL</span>&nbsp;code</li>
+<li>Run the C preprocessor over the specialized <span class="caps">HLSL</span> code to substitute the technique&#8217;s macro defines into the&nbsp;code</li>
+<li>Call the platform shader compiler on the specialized, preprocessed&nbsp;code</li>
 </ul>
 </li>
 </ul>
 </li>
-<li>Gather the results and package everything into a .fxo file</li>
+<li>Gather the results and package everything into a .fxo&nbsp;file</li>
 </ul>
 <h3>Runtime</h3>
-<p>At runtime, we set the branch values as booleans in a constant buffer: </p>
+<p>At runtime, we set the branch values as booleans in a constant&nbsp;buffer: </p>
 <div class="highlight"><pre><span></span><span class="err">pRenderContext-&gt;SetShaderBool(g_bShadowCast, false);</span>
 <span class="err">pRenderContext-&gt;SetShaderBool(g_bSkinning, mesh-&gt;has_skinning_data());</span>
 <span class="err">...</span>
 </pre></div>
 
 
-<p>Then we set the shader and draw:</p>
+<p>Then we set the shader and&nbsp;draw:</p>
 <div class="highlight"><pre><span></span><span class="err">pRenderContext-&gt;SetShader(MeshShader);</span>
 <span class="err">pRenderContext-&gt;Draw(mesh);</span>
 </pre></div>
 
 
-<p>When we draw a mesh, we use the state of the boolean branch values to construct an index into an array of techniques for that shader. Each branch gets one bit in the index. The techniques can be stored as an array for fast lookup but at the cost of more memory, or you can put the techniques into a hash table where the key=index and value=technique, or whatever scheme you want. We look up that technique, set its render state, its shaders, and finally issue the draw calls for the mesh.</p>
-<h3>Validating Lua</h3>
-<p>Although Lua is easy to use to define data, it is dynamically typed, so it's best to do some extra work to enforce that tables contain only valid values. For example, we want the Shader.Technique.RenderState table to only contain fields for render state that we support. When you assign a value to one of the entries in the table, we make sure that value is valid (so you can only assign true/false to AlphaBlendEnable, and not assign true/false to AlphaBlendFunc).</p>
-<p>We can use Lua's metatables to manage access to the table. Here's some code to create read-only enums:</p>
+<p>When we draw a mesh, we use the state of the boolean branch values to construct an index into an array of techniques for that shader. Each branch gets one bit in the index. The techniques can be stored as an array for fast lookup but at the cost of more memory, or you can put the techniques into a hash table where the key=index and value=technique, or whatever scheme you want. We look up that technique, set its render state, its shaders, and finally issue the draw calls for the&nbsp;mesh.</p>
+<h3>Validating&nbsp;Lua</h3>
+<p>Although Lua is easy to use to define data, it is dynamically typed, so it&#8217;s best to do some extra work to enforce that tables contain only valid values. For example, we want the Shader.Technique.RenderState table to only contain fields for render state that we support. When you assign a value to one of the entries in the table, we make sure that value is valid (so you can only assign true/false to AlphaBlendEnable, and not assign true/false to&nbsp;AlphaBlendFunc).</p>
+<p>We can use Lua&#8217;s metatables to manage access to the table. Here&#8217;s some code to create read-only&nbsp;enums:</p>
 <div class="highlight"><pre><span></span><span class="c1">-- Redefine pairs() and ipairs() to call the metatable&#39;s __pairs/__ipairs function, if they exist</span>
 <span class="c1">-- By default, pairs/ipairs will not call the metatable&#39;s __index field, which doesn&#39;t work with</span>
 <span class="c1">-- our controlled-access tables.</span>
@@ -355,21 +356,21 @@ Nosferalatu            </a>
 </pre></div>
 
 
-<p>We can use the above code to set up some enums like this:</p>
+<p>We can use the above code to set up some enums like&nbsp;this:</p>
 <div class="highlight"><pre><span></span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;Solid&quot;</span><span class="p">,</span><span class="s2">&quot;Wireframe&quot;</span><span class="p">}</span>
 <span class="n">CullMode</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;CW&quot;</span><span class="p">,</span><span class="s2">&quot;CCW&quot;</span><span class="p">,</span><span class="s2">&quot;None&quot;</span><span class="p">}</span>
 <span class="n">ComparisonFunc</span> <span class="o">=</span> <span class="n">ReadOnlyEnum</span><span class="p">{</span><span class="s2">&quot;Never&quot;</span><span class="p">,</span><span class="s2">&quot;Less&quot;</span><span class="p">,</span><span class="s2">&quot;Equal&quot;</span><span class="p">,</span><span class="s2">&quot;LEqual&quot;</span><span class="p">,</span><span class="s2">&quot;Greater&quot;</span><span class="p">,</span><span class="s2">&quot;NotEqual&quot;</span><span class="p">,</span><span class="s2">&quot;GEqual&quot;</span><span class="p">,</span><span class="s2">&quot;Always&quot;</span><span class="p">}</span>
 </pre></div>
 
 
-<p>And then we can use these enums as you'd expect in the .fx.lua like this:</p>
+<p>And then we can use these enums as you&#8217;d expect in the .fx.lua like&nbsp;this:</p>
 <div class="highlight"><pre><span></span><span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">FillMode</span> <span class="o">=</span> <span class="n">FillMode</span><span class="p">.</span><span class="n">Solid</span>
 <span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">CullMode</span> <span class="o">=</span> <span class="n">CullMode</span><span class="p">.</span><span class="n">CW</span>
 <span class="n">technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">ZFunc</span> <span class="o">=</span> <span class="n">ComparisonFunc</span><span class="p">.</span><span class="n">LEqual</span>
 </pre></div>
 
 
-<p>And when we try to assign something incorrectly, we get an informative error message:</p>
+<p>And when we try to assign something incorrectly, we get an informative error&nbsp;message:</p>
 <div class="highlight"><pre><span></span>technique.RenderState.CullMode = CullMode.SomethingElse        -- this is line 35
 
 lua: enum.lua:35: Unknown enum value &#39;SomethingElse&#39;
@@ -381,11 +382,11 @@ stack traceback:
 </pre></div>
 
 
-<p>We could have validated the data in C when we retrieved the values from the technique.RenderState table, but there's no way to get the line number of where that value came from in Lua. With the above code, errors are caught immediately in Lua, and we can use the Lua <code>error()</code> function to tell Lua where the error occurred.</p>
-<h3>C Preprocessor</h3>
-<p>We use <a href="http://mcpp.sourceforge.net/">mcpp</a> to preprocess the shaders. You can read more about mcpp at that page. We put the macro definitions into a Lua table so that the same constants used in the .fx files can be used in the .fx.lua file. There are no duplicated constants between the HLSL and Lua code, and we don't have to do something unorthodox like run the C preprocessor over the Lua files.</p>
-<p>The problem, though, is that we want to know the values of the macro defines <em>after</em> they have been preprocessed. For example, given <code>#define MACRO_A 1</code> and <code>#define MACRO_B MACRO_A</code>, we want to set MACRO_A to 1 and MACRO_B to 1. mcpp makes these easy with its <code>put_defines</code> pragma, which outputs the macro definitions at that point in the file.</p>
-<p>When we run <code>mcpp.exe -z -j -P ShaderCommon.h</code> with <code>#pragma mcpp put_defines</code> at the end of the file, we get output like this:</p>
+<p>We could have validated the data in C when we retrieved the values from the technique.RenderState table, but there&#8217;s no way to get the line number of where that value came from in Lua. With the above code, errors are caught immediately in Lua, and we can use the Lua <code>error()</code> function to tell Lua where the error&nbsp;occurred.</p>
+<h3>C&nbsp;Preprocessor</h3>
+<p>We use <a href="http://mcpp.sourceforge.net/">mcpp</a> to preprocess the shaders. You can read more about mcpp at that page. We put the macro definitions into a Lua table so that the same constants used in the .fx files can be used in the .fx.lua file. There are no duplicated constants between the <span class="caps">HLSL</span> and Lua code, and we don&#8217;t have to do something unorthodox like run the C preprocessor over the Lua&nbsp;files.</p>
+<p>The problem, though, is that we want to know the values of the macro defines <em>after</em> they have been preprocessed. For example, given <code>#define MACRO_A 1</code> and <code>#define MACRO_B MACRO_A</code>, we want to set MACRO_A to 1 and MACRO_B to 1. mcpp makes these easy with its <code>put_defines</code> pragma, which outputs the macro definitions at that point in the&nbsp;file.</p>
+<p>When we run <code>mcpp.exe -z -j -P ShaderCommon.h</code> with <code>#pragma mcpp put_defines</code> at the end of the file, we get output like&nbsp;this:</p>
 <div class="highlight"><pre><span></span><span class="err">/* Currently defined macros. */</span>
 <span class="err">#define kIMAGE_PROCESS_STENCIL_BIT 128  /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:123    */</span>
 <span class="err">#define kDYNAMIC_MESH_PROJECT_LIGHT_STENCIL_BIT 96      /* C:/dfp-seed/Common/Code/DFGraphics/Inc/ShaderCommon.h:118    */</span>
@@ -396,7 +397,7 @@ stack traceback:
 </pre></div>
 
 
-<p>We parse the above #define's into key/value pairs and put them into a Lua table named cpp:</p>
+<p>We parse the above #define&#8217;s into key/value pairs and put them into a Lua table named&nbsp;cpp:</p>
 <div class="highlight"><pre><span></span><span class="n">cpp</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="kr">function</span> <span class="nf">rtrim</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="kr">return</span> <span class="p">(</span><span class="n">s</span><span class="p">:</span><span class="n">gsub</span><span class="p">(</span><span class="s2">&quot;%s*$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span> <span class="kr">end</span>
 <span class="kr">function</span> <span class="nf">RegisterMacros</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
@@ -408,7 +409,7 @@ stack traceback:
 </pre></div>
 
 
-<p>Now we can use them anywhere in the .fx.lua files:</p>
+<p>Now we can use them anywhere in the .fx.lua&nbsp;files:</p>
 <div class="highlight"><pre><span></span><span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilEnable</span> <span class="o">=</span> <span class="kc">true</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilRef</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">shader</span><span class="p">.</span><span class="n">Technique</span><span class="p">.</span><span class="n">RenderState</span><span class="p">.</span><span class="n">StencilMask</span> <span class="o">=</span> <span class="nb">tonumber</span><span class="p">(</span><span class="n">cpp</span><span class="p">[</span><span class="s2">&quot;kDYNAMIC_MESH_STENCIL_BIT&quot;</span><span class="p">])</span>
@@ -468,6 +469,23 @@ stack traceback:
 <script src="/theme/js/respond.min.js"></script>
 
 
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-155088985-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <!-- End Google Analytics Code -->
 
 
 </body>
