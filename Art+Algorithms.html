@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
 <head>
-    <title>About - Nosferalatu</title>
+    <title>Art+Algorithms - Nosferalatu</title>
     <!-- Using the latest rendering mode for IE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
@@ -9,16 +9,22 @@
 
 
 
-<link rel="canonical" href="/pages/About.html">
+<link rel="canonical" href="/Art+Algorithms.html">
 
         <meta name="author" content="David Farrell" />
-        <meta name="description" content="About Me" />
+        <meta name="keywords" content="Programming,OculusMedium" />
+        <meta name="description" content="Art+Algorithms: Developing Oculus Medium in VR" />
 
-    <meta property="og:site_name" content="Nosferalatu" />
-    <meta property="og:type" content="article"/>
-    <meta property="og:title" content="About"/>
-    <meta property="og:url" content="/pages/About.html"/>
-    <meta property="og:description" content="About Me" />
+        <meta property="og:site_name" content="Nosferalatu" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Art+Algorithms"/>
+        <meta property="og:url" content="/Art+Algorithms.html"/>
+        <meta property="og:description" content="Art+Algorithms: Developing Oculus Medium in VR"/>
+        <meta property="article:published_time" content="2019-12-30" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:tag" content="OculusMedium" />
+            <meta property="article:author" content="David Farrell" />
 
 
 
@@ -50,13 +56,13 @@ Nosferalatu            </a>
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
-                         <li class="active"><a href="/pages/About.html">
+                         <li><a href="/pages/About.html">
                              About
                           </a></li>
                          <li><a href="/pages/Projects.html">
                              Projects
                           </a></li>
-                        <li >
+                        <li class="active">
                             <a href="/category/blog.html">Blog</a>
                         </li>
             </ul>
@@ -74,15 +80,46 @@ Nosferalatu            </a>
 <div class="container">
     <div class="row">
         <div class="col-sm-9">
-    <section id="content" class="body">
-        <h1 class="entry-title">About</h1>
-        
-        <div class="entry-content">
-            <p>My name is David Farrell. I work as a software engineer specializing in graphics and high performance&nbsp;programming.</p>
-<p>I&#8217;m currently employed at <a href="http://www.adobe.com">Adobe</a>. In the past, I&#8217;ve worked at <a href="http://www.oculus.com">Oculus</a>, <a href="http://www.doublefine.com">Double Fine Productions</a>, <a href="http://en.wikipedia.org/wiki/NStigate_Games">Nihilistic Software</a>, <a href="http://en.wikipedia.org/wiki/Stormfront_Studios">Stormfront Studios</a>, <a href="http://en.wikipedia.org/wiki/Rendition_(company)">Rendition</a>, and a few other gigs here and&nbsp;there.</p>
-<p>I began programming on a Commodore <span class="caps">VIC</span>-20 when I was young and promptly ran out of memory. It&#8217;s a problem I&#8217;m still running into&nbsp;today!</p>
-        </div>
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/Art+Algorithms.html"
+                       rel="bookmark"
+                       title="Permalink to Art+Algorithms">
+                        Art+Algorithms
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2019-12-30T12:00:00-08:00"> Mon 30 December 2019</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/programming.html">Programming</a>
+        /
+	<a href="/tag/oculusmedium.html">OculusMedium</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>I spoke at Oculus Connect 4 about how we use <span class="caps">VR</span> in the development of Oculus Medium. I demonstrated several of our debugging visualizations that become very powerful when combined with <span class="caps">VR</span> manipulation. This works well for the same reason that sculpting in <span class="caps">VR</span> works so well: each hand can control a 3D transformation, and your head can also control a 3D transformation. This enables you to manipulate 3D objects and visualizations more quickly then with a keyboard, mouse, and 2D&nbsp;monitor.</p>
+<p>Much of this presentation was delivered from within a <span class="caps">VR</span> headset. I modified Medium so that there was a camera object in <span class="caps">VR</span> that I could place in the scene and point at me. The image from that camera object was then mirrored on a desktop window, which could be seen by the audience. That was a much more pleasant experience for the audience than watching a shaky first-person point of view. Also, I placed the camera object in the headset roughly where the audience was, so I knew which direction to look at while in <span class="caps">VR</span>.</p>
+<p>In hindsight, we don&#8217;t take advantage of the Studio Share (networked connection of two Medium instances) feature for development as much as I thought we would. All of our debugging visualizations work over Studio Share, but there&#8217;s still quite a bit of friction to jump into <span class="caps">VR</span> and establish a Studio Share connection. Still, it is used from time to time; for example, Medium&#8217;s <span class="caps">UI</span> system can be hot reloaded, and two developers can quickly develop and critique <span class="caps">UI</span> by editing files from within a Studio Share&nbsp;session.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/oXtspak9aVU" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <!-- /.entry-content -->
+        </article>
     </section>
+
         </div>
         <div class="col-sm-3" id="sidebar">
             <aside>
