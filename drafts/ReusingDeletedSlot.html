@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
+<head>
+    <title>Reusing Deleted Slots in the Simple GPU Hash Table - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<link rel="canonical" href="/drafts/ReusingDeletedSlot.html">
+
+        <meta name="author" content="David Farrell" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Reusing the deleted slots in the simple GPU hash table" />
+
+        <meta property="og:site_name" content="Nosferalatu" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Reusing Deleted Slots in the Simple GPU Hash Table"/>
+        <meta property="og:url" content="/drafts/ReusingDeletedSlot.html"/>
+        <meta property="og:description" content="Reusing the deleted slots in the simple GPU hash table"/>
+        <meta property="article:published_time" content="2020-03-06" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:author" content="David Farrell" />
+
+
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="/theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="/theme/css/typogrify.css" rel="stylesheet">
+    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
+        <link href="/static/custom.css" rel="stylesheet">
+
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="/" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="/pages/About.html">
+                             About
+                          </a></li>
+                         <li><a href="/pages/Projects.html">
+                             Projects
+                          </a></li>
+                        <li class="active">
+                            <a href="/category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<!-- Banner -->
+<!-- End Banner -->
+
+<!-- Content Container -->
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="/drafts/ReusingDeletedSlot.html"
+                       rel="bookmark"
+                       title="Permalink to Reusing Deleted Slots in the Simple GPU Hash Table">
+                        Reusing Deleted Slots in the Simple <span class="caps">GPU</span> Hash&nbsp;Table
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2020-03-06T15:00:00-08:00"> Fri 06 March 2020</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="/tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <h1>Reusing Deleted&nbsp;Slots</h1>
+<p>If the lock free hash table is used for long enough with many inserts and deletes, then it will fill up with keys that have been marked for deletion. Because the table never moves keys around (even deleted keys), this causes the table to fill up with garbage keys, which causes the table&#8217;s performance to grow worse over&nbsp;time.</p>
+<p>To help with this problem, we can reuse deleted slots. This requires that we change the contract of the lock free hash table so that inserts and deletes are not allowed to happen at the same time. Then, the delete function can mark keys (not values) as tombstoned. The insert function will then place keys into either empty or tombstoned slots. Tombstones are a special sentinal value separate from the empty sentinel which mark keys as deleted, but still in the hash table so that lookups still&nbsp;work.</p>
+<p>This works as long as inserts and deletes do not happen in parallel, and never at the same time. However, lookups can happen concurrently with both inserts and deletes with this&nbsp;modification.</p>
+<p>Note that this means keys get moved around; a key is assigned a slot, but when it&#8217;s deleted and then re-inserted, it can be assigned a different&nbsp;slot.</p>
+<p>The possible states of key/values during inserts are&nbsp;then:</p>
+<ul>
+<li>empty/empty</li>
+<li>key/empty</li>
+<li>empty/value</li>
+<li>key/value</li>
+<li>tombstone/empty</li>
+</ul>
+<p>Once all the writes from the insertion kernel have finished, then the possible states for a key are empty/empty, key/value, or&nbsp;tombstone/empty.</p>
+<p>So then the possible states for a key/value pair during deletes are&nbsp;then:</p>
+<ul>
+<li>empty/empty</li>
+<li>key/value</li>
+<li>key/empty</li>
+<li>tombstone/value</li>
+<li>tombstone/empty</li>
+</ul>
+<p>And once all the writes from the deletion kernel have finished, the possible states for a key are empty/empty, key/value, or&nbsp;tombstone/empty.</p>
+<p>The code for insert and delete&nbsp;becomes:</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">gpu_hashtable_insert</span><span class="p">(</span><span class="n">KeyValue</span><span class="o">*</span> <span class="n">hashtable</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">key</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">value</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">uint32_t</span> <span class="n">slot</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">uint32_t</span> <span class="n">prev</span> <span class="o">=</span> <span class="n">atomicCAS</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">key</span><span class="p">,</span> <span class="n">kEmpty</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">prev</span> <span class="o">==</span> <span class="n">kEmpty</span> <span class="o">||</span> <span class="n">prev</span> <span class="o">==</span> <span class="n">key</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">;</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">prev</span> <span class="o">==</span> <span class="n">kTombstone</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">prev</span> <span class="o">=</span> <span class="n">atomicCAS</span><span class="p">(</span><span class="o">&amp;</span><span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">key</span><span class="p">,</span> <span class="n">kTombstone</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">prev</span> <span class="o">==</span> <span class="n">kTombstone</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">kHashTableCapacity</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">gpu_hashtable_delete</span><span class="p">(</span><span class="n">KeyValue</span><span class="o">*</span> <span class="n">hashtable</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">key</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">value</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">uint32_t</span> <span class="n">slot</span> <span class="o">=</span> <span class="n">hash</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">key</span> <span class="o">==</span> <span class="n">key</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">key</span> <span class="o">=</span> <span class="n">kTombstone</span><span class="p">;</span>
+            <span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">value</span> <span class="o">=</span> <span class="n">kEmpty</span><span class="p">;</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hashtable</span><span class="p">[</span><span class="n">slot</span><span class="p">].</span><span class="n">key</span> <span class="o">==</span> <span class="n">kEmpty</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="p">(</span><span class="n">slot</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">kHashTableCapacity</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>The example code doesn&#8217;t use this variant because I wanted to show a generic implementation that supports concurrent inserts, lookups, and&nbsp;deletes.</p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3" id="sidebar">
+            <aside>
+<!-- Sidebar -->
+<section class="well well-sm">
+  <ul class="list-group list-group-flush">
+
+<!-- Sidebar/Social -->
+<li class="list-group-item">
+  <h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+  <ul class="list-group" id="social">
+    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i class="fa fa-twitter-square fa-lg"></i> twitter</a></li>
+    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i class="fa fa-github-square fa-lg"></i> github</a></li>
+  </ul>
+</li>
+<!-- End Sidebar/Social -->
+  </ul>
+</section>
+<!-- End Sidebar -->            </aside>
+        </div>
+    </div>
+</div>
+<!-- End Content Container -->
+
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2020 David Farrell
+            &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="/theme/js/jquery.min.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="/theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="/theme/js/respond.min.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-155088985-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <!-- End Google Analytics Code -->
+
+
+</body>
+</html>

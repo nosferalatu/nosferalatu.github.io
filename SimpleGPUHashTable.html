@@ -9,7 +9,7 @@
 
 
 
-<link rel="canonical" href="/drafts/SimpleGPUHashTable.html">
+<link rel="canonical" href="/SimpleGPUHashTable.html">
 
         <meta name="author" content="David Farrell" />
         <meta name="keywords" content="Programming" />
@@ -18,7 +18,7 @@
         <meta property="og:site_name" content="Nosferalatu" />
         <meta property="og:type" content="article"/>
         <meta property="og:title" content="A Simple GPU Hash Table"/>
-        <meta property="og:url" content="/drafts/SimpleGPUHashTable.html"/>
+        <meta property="og:url" content="/SimpleGPUHashTable.html"/>
         <meta property="og:description" content="A Simple GPU Hash Table"/>
         <meta property="article:published_time" content="2020-03-08" />
             <meta property="article:section" content="Blog" />
@@ -83,7 +83,7 @@ Nosferalatu            </a>
         <article>
             <header class="page-header">
                 <h1>
-                    <a href="/drafts/SimpleGPUHashTable.html"
+                    <a href="/SimpleGPUHashTable.html"
                        rel="bookmark"
                        title="Permalink to A Simple GPU Hash Table">
                         A Simple <span class="caps">GPU</span> Hash&nbsp;Table
@@ -242,6 +242,13 @@ Nosferalatu            </a>
 <p>However, when processing a batch of inserts/deletes in parallel in a kernel, and a kernel&#8217;s input array of key/values contains duplicate keys, then it&#8217;s unpredictable which of those key/values will &#8220;win&#8221; and be the last one written to the hash table. For example, imagine that an insertion kernel is called with an input array of key/values is <code>A/0 B/1 A/2 C/3 A/4</code>. When the kernel finishes, the key/values <code>B/1</code> and <code>C/3</code> are guaranteed to be in the table, but any one of <code>A/0</code>, <code>A/2</code>, or <code>A/4</code> will be in the table. Depending on the application, this may or may not be an issue&#8212; it might be known that the input array has no duplicate keys, or it might not matter which value is the last to be&nbsp;written.</p>
 <p>If this is an issue for an application, then it needs to separate the duplicate key/values into different <span class="caps">CUDA</span> kernel calls. In <span class="caps">CUDA</span>, all operations within a kernel invocation always finish before the next kernel invocation (at least, within a single stream; kernels in different streams execute in parallel). In the above example, if one kernel is called with <code>A/0 B/1 A/2 C/3</code>, and then another kernel is called with <code>A/4</code>, then the key <code>A</code> will have the value <code>4</code>.</p>
 <p>Another consideration is whether the lookup() and delete() functions should use a plain or volatile pointer to the hash table key/value array. The <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#volatile-qualifier"><span class="caps">CUDA</span> documentation for volatile</a> states that &#8220;The compiler is free to optimize reads and writes to global or shared memory &#8230; These optimizations can be disabled using the volatile keyword: &#8230; any reference to this variable compiles to an actual memory read or write instruction.&#8221; Using volatile is not necessary for correctness; if a thread uses a cached value from an earlier read, it will be using slightly out of date information, but it will still be using information from a valid state of the hash table at some point in that kernel&#8217;s invocation. If an application wants to be sure to use the most up to date information, then it can use a volatile pointer, but there is a slight performance hit (in my tests, deleting 32 million elements went from 500 million deletes / second to 450&nbsp;Mdeletes/sec).</p>
+<h1>Performance</h1>
+<p>In a test that inserts 64 million items and deletes 32 million of them, there&#8217;s no contest between std::unordered_map and the <span class="caps">GPU</span> hash&nbsp;table:</p>
+<p><img alt="performance comparison" src="/images/stdunorderedmap_vs_simplegpuhashtable.png"></p>
+<p>The std::unordered_map took 70691 milliseconds to insert and delete the items, and then freeing the unordered_map (freeing an unordered_map with millions of items consumes a significant amount of time because unordered_map does many memory allocations internally). To be fair, std:unordered_map is operating on a very different set of constraints. It is a single <span class="caps">CPU</span> thread, it supports key/values of any size, and it works well with high load factors and has steady performance after many&nbsp;deletions.</p>
+<p>The <span class="caps">GPU</span> hash table and interop time took 984 milliseconds. That includes time for allocating and deleting the hash table (which is a single memory allocation of 1 <span class="caps">GB</span>, which takes some time in <span class="caps">CUDA</span>), inserting and deleting the items, and iterating through all items. Also included are all memory copies to/from the <span class="caps">GPU</span>.</p>
+<p>The <span class="caps">GPU</span> hash table took 271 milliseconds. That includes just the <span class="caps">GPU</span> time to insert and delete the items, and not the time for memory copies or iterating over the resulting table. If the <span class="caps">GPU</span> table is long lived, or the hash table exists entirely on the <span class="caps">GPU</span> (for example, to build a hash table on the <span class="caps">GPU</span> that is used by other <span class="caps">GPU</span> code, not the <span class="caps">CPU</span>), then this is the relevant&nbsp;time.</p>
+<p>The <span class="caps">GPU</span> hash table achieves high performance thanks to the large bandwidth and massive parallelism of <span class="caps">GPU</span>&#8217;s.</p>
 <h1>Drawbacks</h1>
 <p>There are a couple of issues with this hash table design that should be kept in&nbsp;mind:</p>
 <ul>
@@ -439,7 +446,7 @@ Nosferalatu            </a>
    <div class="container">
       <hr>
       <div class="row">
-         <div class="col-xs-10">&copy; 2019 David Farrell
+         <div class="col-xs-10">&copy; 2020 David Farrell
             &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
             <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
             <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
@@ -456,6 +463,23 @@ Nosferalatu            </a>
 <script src="/theme/js/respond.min.js"></script>
 
 
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-155088985-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <!-- End Google Analytics Code -->
 
 
 </body>
