@@ -1,0 +1,263 @@
+var container;
+var camera, scene, renderer, controls;
+var mouseX, mouseY;
+var particleMaterial; //an example particle material to use
+var t = 0;//increases each call of render
+var pause = false;
+var dtConstant = 10;
+var omega = new THREE.Vector3( 1, 0, 0 );
+var skewSymMatrix = new THREE.Matrix3();
+skewSymMatrix.set(0.0, -omega.z, omega.y,
+                  omega.z, 0.0, -omega.x,
+                  -omega.y, omega.x, 0.0);
+var vectorFormula = [
+    '(new THREE.Vector3(x,y,z)).applyMatrix3(skewSymMatrix).x',
+	'(new THREE.Vector3(x,y,z)).applyMatrix3(skewSymMatrix).y',
+	'(new THREE.Vector3(x,y,z)).applyMatrix3(skewSymMatrix).z'
+];
+var spriteGroup;
+var fsize = 6;
+var ffreq = 3;
+var width = 0.5;
+var height = 0.5;
+var depth = 0.5;
+var wcs = 10;
+var hcs = 10;
+var dcs = 10;
+var cube;
+var dt = 0.01;
+
+init();
+animate();
+
+function $(el){
+	return document.getElementById(el);
+}
+
+function computePoints(x,y,z) {
+    //outputs vector based on vectorformula
+	return new THREE.Vector3(eval(vectorFormula[0]), eval(vectorFormula[1]), eval(vectorFormula[2]));
+}
+
+function init(){
+	renderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('canvas') });
+
+    var canvas = $('canvas');
+    var canvasWidth = canvas.width;
+    var canvasHeight = canvas.height;
+	var aspectRatio = canvasWidth / canvasHeight;
+
+	renderer.setSize( canvasWidth, canvasHeight );
+	
+	camera = new THREE.PerspectiveCamera(75, aspectRatio, 1, 3000);
+	camera.position.z = 20;//sets up camera
+	camera.position.y = 4;
+	camera.position.x = 4;
+
+	scene = new THREE.Scene();//scene setup
+
+	// controls = new THREE.TrackballControls(camera, $('canvas'));//sets up controls
+    controls = new THREE.OrbitControls(camera, $('canvas'));
+    controls.enableDamping = true;
+
+    t = 0;
+	var PI2 = Math.PI * 2;//constant for 2pi
+
+	// var normal = new THREE.Vector3( 0, 1, 0 );
+	// var color = new THREE.Color( 0xffaa00 );
+	// var face = new THREE.Face3( 0, 1, 2, normal, color, 0 );
+	// scene.add(face);
+
+    // scene.add(sprite);
+    spriteGroup = new THREE.Object3D();
+    scene.add(spriteGroup);
+    renderer.setClearColor(0x000000);
+    
+    createStuff();
+    
+    setInterval(function(){
+    	cube.material.color.offsetHSL(0.001,0,0);
+    },10);
+
+    window.addEventListener( 'resize', onWindowResize, false );
+}
+
+function makeArrow(pos, dir){
+    var len = dir.length();
+	//dir = dir.normalize();//make sure it's a unit vector
+    // const arrowColor = new THREE.Color( 0xffffff );
+    const arrowColor = new THREE.Color(1,1,len);
+    var arrow = new THREE.ArrowHelper(dir, pos, 0.5, arrowColor, 0.25, 0.25);
+    arrow.lineWidth = 5.0;
+    return arrow;
+}
+
+function createStuff(){
+	t = 0;
+	
+	scene.children = [];
+
+	var light = new THREE.AmbientLight( 0x404040 ); // soft white light
+	scene.add( light );
+
+	var axesHelper = new THREE.AxesHelper( 15 );
+	scene.add( axesHelper )
+
+	scene.add(spriteGroup)
+	addArrows();
+
+    var w = width;
+    var h = height;
+    var d = depth;
+    // var sections = 10;
+    var geometry = new THREE.BoxGeometry( w, h, d, wcs, hcs, dcs);//10 width and height segments, which means more shit in our geometry which means a better flow
+
+    // tempgeo = new THREE.BoxGeometry( w, h, 0, sections, sections, 0);//100 width and height segments, which means more shit in our geometry which means a better flow
+    // geometry = boxGeo(3,1,10,10).clone();
+    // geometry = new THREE.Geometry();
+    
+    // for(var x = -w; x <= w; x+= 2*w)
+    // 	for(var x = -w; x <= w; x+= 2*w)
+    
+    // for(var i = 0; i < geometry.vertices.length; i++){
+    // 	var v = geometry.vertices[i];
+    // 	if(Math.abs(v.x) == w/2 || Math.abs(v.y) == h/2)
+    // 		geometry.vertices.push(v.clone());
+    // 	else
+    // 		console.log(v);
+    // }
+//    for(var i = 0; i < geometry.vertices.length(); i++){
+		// var v = geometry.vertices[i];
+
+//        	if(Math.abs(v.x) != w/2 && Math.abs(v.y) != h/2){
+//        		geometry.vertices.splice(i,1);
+//        		i-=1;
+//        	}
+//       }
+
+    // console.log(geometry.vertices.length)
+	var material = new THREE.MeshBasicMaterial( {color: 0x03A678} );//todo - add color to dat-gui
+	cube = new THREE.Mesh( geometry, material );
+	// cube.geometry.dynamic = true
+	// cube.geometry.verticesNeedUpdate = true
+	scene.add( cube );
+}
+
+function addArrows(){
+	spriteGroup.children = [];
+	for(var x = -fsize; x <= fsize; x+=fsize/ffreq)
+        for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
+    		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
+    			var start = new THREE.Vector3(x,y,z);
+                var dir = computePoints(x,y,z);
+                
+        		var arrow = makeArrow(start, dir);
+        		spriteGroup.add(arrow);
+    		}
+}
+
+function updateArrows(){
+	for(var i = 0; i < spriteGroup.children.length; i++){
+		var arrow = spriteGroup.children[i];
+		var pos = arrow.position;
+		arrow.setDirection(computePoints(pos.x,pos.y,pos.z));
+        var len = computePoints(pos.x,pos.y,pos.z).length()/10;
+        //arrow.setLength(len, len*0.5, len*0.5);
+        var arrowColor = new THREE.Color(len,len,len);
+        arrowColor.setHSL(0.5, 0.5, len);
+        arrow.setColor(arrowColor);
+	}
+}
+
+function animate(){
+	requestAnimationFrame(animate);
+	render();
+}
+
+function render(){
+	camera.lookAt(scene.position);
+	
+	if(!pause){
+		updateGeometryVertices();
+		t += dt;
+		updateArrows();
+	}
+		
+	//stuff you want to happen continuously here
+	controls.update();
+	renderer.render(scene, camera);
+}
+
+function updateGeometryVertices(){
+	for(var vindex in cube.geometry.vertices){
+		var vertex = cube.geometry.vertices[vindex];
+		var offset = scene.localToWorld(vertex.clone()).add(cube.position);//this gets the vertex's position relative to the scene's origin, which is what we want
+		var movementVector = computePoints(offset.x, offset.y, offset.z);
+		movementVector.multiplyScalar(dt * dtConstant);//we don't want it moving too quickly
+		vertex.add(movementVector);//moving the actual thing
+	}
+	cube.geometry.verticesNeedUpdate = true
+	// scene.remove(cube);
+	// cube = new THREE.Mesh( geometry, material );
+	// scene.add( cube );
+	// cube.setGeometry(geometry)
+
+}
+
+// function boxGeo(height, width, hsections, wsections){//a box with only points on the border, with no points on the inside. Will save a shitton of computing time
+// 	var geo = new THREE.Geometry();
+// 	for(var x = -width; x <= width; x+= width / wsections)
+// 		for(var y = -height; y <= height; y+= height / hsections)
+// 			if(Math.abs(y) == height || Math.abs(x) == width)//if we're on a border position
+// 				geo.vertices.push(new THREE.Vector3(x,y,0));
+// 	return geo;
+	
+// }
+
+
+function boxGeo(width,height, hsections, wsections){
+
+		var a = {
+			x:-width/2,
+			y:-height/2
+		}
+		
+		var b = {
+			x:width/2,
+			y:height/2
+		}
+		
+		
+		var geometry = new THREE.Geometry();
+		
+		geometry.vertices.push( new THREE.Vector3( a.x, a.y, 0));
+		geometry.vertices.push( new THREE.Vector3( b.x, a.y, 0));
+		geometry.vertices.push( new THREE.Vector3( b.x, b.y, 0));
+		geometry.vertices.push( new THREE.Vector3( a.x, b.y, 0));
+
+		geometry.faces.push( new THREE.Face3( 0, 1, 2 )); // counter-clockwise winding order
+		geometry.faces.push( new THREE.Face3( 0, 2, 3 ));
+		
+		
+		for(var x = -width; x <= width; x+= width / wsections)//now we'll add the little segments
+			for(var y = -height; y <= height; y+= height / hsections)
+				if((Math.abs(y) == height || Math.abs(x) == width) && geometry.vertices.indexOf(new THREE.Vector3(x,y,0)) == -1)//if we're on a border position
+					geometry.vertices.push(new THREE.Vector3(x,y,0));
+		
+		// geometry.computeCentroids();
+		geometry.computeFaceNormals();
+		geometry.computeVertexNormals();
+
+		return geometry
+}
+
+function onWindowResize() {
+    // we need the [0] to get to this canvas here; i don't understand why, because we don't need the [0] above
+    var canvas = $('canvas')[0];
+    var canvasWidth = canvas.width;
+    var canvasHeight = canvas.height;
+	camera.aspect = canvasWidth / canvasHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize(canvasWidth, canvasHeight, false);
+	controls.handleResize();
+}

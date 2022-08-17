@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
 <head>
-    <title>Archives - Nosferalatu</title>
+    <title>Better Concurrent GPU hash tables - Nosferalatu</title>
     <!-- Using the latest rendering mode for IE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
@@ -9,26 +9,32 @@
 
 
 
+<link rel="canonical" href="../drafts/BetterConcurrentGPUHashTables.html">
 
         <meta name="author" content="David Farrell" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Better Concurrent GPU hash tables" />
 
-    <!-- Open Graph tags -->
         <meta property="og:site_name" content="Nosferalatu" />
-        <meta property="og:type" content="website"/>
-        <meta property="og:title" content="Nosferalatu"/>
-        <meta property="og:url" content="."/>
-        <meta property="og:description" content="Nosferalatu"/>
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Better Concurrent GPU hash tables"/>
+        <meta property="og:url" content="../drafts/BetterConcurrentGPUHashTables.html"/>
+        <meta property="og:description" content="Better Concurrent GPU hash tables"/>
+        <meta property="article:published_time" content="2020-03-06" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:author" content="David Farrell" />
 
 
 
     <!-- Bootstrap -->
-        <link rel="stylesheet" href="./theme/css/bootstrap.yeti.min.css" type="text/css"/>
-    <link href="./theme/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="../theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="../theme/css/font-awesome.min.css" rel="stylesheet">
 
-    <link href="./theme/css/pygments/emacs.css" rel="stylesheet">
-        <link href="./theme/css/typogrify.css" rel="stylesheet">
-    <link rel="stylesheet" href="./theme/css/style.css" type="text/css"/>
-        <link href="./static/custom.css" rel="stylesheet">
+    <link href="../theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="../theme/css/typogrify.css" rel="stylesheet">
+    <link rel="stylesheet" href="../theme/css/style.css" type="text/css"/>
+        <link href="../static/custom.css" rel="stylesheet">
 
 
 
@@ -44,19 +50,19 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a href="./" class="navbar-brand">
+            <a href="../" class="navbar-brand">
 Nosferalatu            </a>
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
-                         <li><a href="./pages/About.html">
+                         <li><a href="../pages/About.html">
                              About
                           </a></li>
-                         <li><a href="./pages/Projects.html">
+                         <li><a href="../pages/Projects.html">
                              Projects
                           </a></li>
-                        <li >
-                            <a href="./category/blog.html">Blog</a>
+                        <li class="active">
+                            <a href="../category/blog.html">Blog</a>
                         </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -74,42 +80,45 @@ Nosferalatu            </a>
     <div class="row">
         <div class="col-sm-9">
     <section id="content">
-      <h1>Archives for Nosferalatu</h1>
-        <div id="archives">
-                <p>
-                    <span class="categories-timestamp"><time datetime="2020-03-08T15:00:00-07:00">Sun 08 March 2020</time></span>
-                    <a href="./SimpleGPUHashTable.html">A Simple <span class="caps">GPU</span> Hash&nbsp;Table</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2019-12-30T14:00:00-08:00">Mon 30 December 2019</time></span>
-                    <a href="./SculptingAndSimulations.html">Sculpting And Simulations with 6DoF&nbsp;Controllers</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2019-12-30T13:00:00-08:00">Mon 30 December 2019</time></span>
-                    <a href="./OculusMediumMoveTool.html">Oculus Medium&#8217;s Move&nbsp;Tool</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2019-12-30T12:00:00-08:00">Mon 30 December 2019</time></span>
-                    <a href="./Art+Algorithms.html">Art+Algorithms</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2016-11-27T12:00:00-08:00">Sun 27 November 2016</time></span>
-                    <a href="./Pelican.html">Pelican and Math&nbsp;Equations</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2014-12-31T12:00:00-08:00">Wed 31 December 2014</time></span>
-                    <a href="./ShaderGeneration.html">Shader&nbsp;Generation</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2014-11-15T12:00:00-08:00">Sat 15 November 2014</time></span>
-                    <a href="./CQ2Rendering.html">Physically Based Deferred Rendering in Costume Quest&nbsp;2</a>
-                </p>
-                <p>
-                    <span class="categories-timestamp"><time datetime="2014-05-26T13:00:00-07:00">Mon 26 May 2014</time></span>
-                    <a href="./setting-up.html">Setting Up This&nbsp;Blog</a>
-                </p>
-        </div>
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="../drafts/BetterConcurrentGPUHashTables.html"
+                       rel="bookmark"
+                       title="Permalink to Better Concurrent GPU hash tables">
+                        Better Concurrent <span class="caps">GPU</span> hash&nbsp;tables
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2020-03-06T15:00:00-08:00"> Fri 06 March 2020</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="../tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <h1>Reversible hash&nbsp;functions</h1>
+<p>Reversible hash functions:&nbsp;https://github.com/senderista/hashtable-benchmarks</p>
+<p>Using these, we can store the hash in the table instead of the key. This helps Robin Hood, and resizing the table by realloc-and-grow (because that has to rehash each key), and backwards shift (because when shifting backwards you have to see if a key is at its ideal&nbsp;slot).</p>
+<h1>Bidirectional Linear&nbsp;Probing</h1>
+<p>https://github.com/senderista/hashtable-benchmarks
+Searches either forwards or backwards from the ideal slot. Uses a hash function that&#8217;s ordered, so key1&lt;key2 always means hash(key1)&lt;hash(key2), but what hash function is that (besides a&nbsp;translation)?</p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
     </section>
+
         </div>
         <div class="col-sm-3" id="sidebar">
             <aside>
@@ -147,13 +156,13 @@ Nosferalatu            </a>
       </div>
    </div>
 </footer>
-<script src="./theme/js/jquery.min.js"></script>
+<script src="../theme/js/jquery.min.js"></script>
 
 <!-- Include all compiled plugins (below), or include individual files as needed -->
-<script src="./theme/js/bootstrap.min.js"></script>
+<script src="../theme/js/bootstrap.min.js"></script>
 
 <!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
-<script src="./theme/js/respond.min.js"></script>
+<script src="../theme/js/respond.min.js"></script>
 
 
     <!-- Google Analytics -->

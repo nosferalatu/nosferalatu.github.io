@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
+<head>
+    <title>Derivatives, Logarithms, and Transforms - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<link rel="canonical" href="../drafts/DerivativesLogarithmsTransforms.html">
+
+        <meta name="author" content="David Farrell" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Understanding derivatives and logarithms of transforms" />
+
+        <meta property="og:site_name" content="Nosferalatu" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Derivatives, Logarithms, and Transforms"/>
+        <meta property="og:url" content="../drafts/DerivativesLogarithmsTransforms.html"/>
+        <meta property="og:description" content="Understanding derivatives and logarithms of transforms"/>
+        <meta property="article:published_time" content="2022-08-01" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:author" content="David Farrell" />
+
+
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="../theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="../theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="../theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="../theme/css/typogrify.css" rel="stylesheet">
+    <link rel="stylesheet" href="../theme/css/style.css" type="text/css"/>
+        <link href="../static/custom.css" rel="stylesheet">
+
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="../" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="../pages/About.html">
+                             About
+                          </a></li>
+                         <li><a href="../pages/Projects.html">
+                             Projects
+                          </a></li>
+                        <li class="active">
+                            <a href="../category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<!-- Banner -->
+<!-- End Banner -->
+
+<!-- Content Container -->
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="../drafts/DerivativesLogarithmsTransforms.html"
+                       rel="bookmark"
+                       title="Permalink to Derivatives, Logarithms, and Transforms">
+                        Derivatives, Logarithms, and&nbsp;Transforms
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2022-08-01T21:00:00-07:00"> Mon 01 August 2022</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="../tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>Given a transform matrix <span class="math">\(T\)</span> and a point x, we can find the transformed point with <span class="math">\(T * x\)</span>. Multiply the point x by the matrix <span class="math">\(T\)</span>, and out pops a new&nbsp;point.</p>
+<p>But what if we want to smoothly interpolate <span class="math">\(T\)</span> so it moves x along the path from its initial position to its position transformed by <span class="math">\(T\)</span>? What we want&nbsp;is </p>
+<p><span class="math">\(x(t) = T(t) *&nbsp;x(0)\)</span></p>
+<p>meaning, to find the point x at time t, we multiply the point&#8217;s initial position (<span class="math">\(x(0)\)</span>) by the transform at time t (<span class="math">\(T(t)\)</span>). But since we only have a single matrix <span class="math">\(T\)</span>, we need to find a way to interpolate that matrix in&nbsp;time.</p>
+<p>I want to show how to do that, and also share some interesting insights I learned along the&nbsp;way.</p>
+<h3>What&#8217;s <span class="math">\(T(t)\)</span>?</h3>
+<p>We have <span class="math">\(T\)</span>, but not <span class="math">\(T(t)\)</span>, which changes with time. Assuming that multiplying two transforms represents the composition of those transforms, we can find <span class="math">\(T(t)\)</span> by&nbsp;saying</p>
+<p><span class="math">\(T(0) = I\)</span> (the identity&nbsp;transform)</p>
+<p><span class="math">\(T(1) =&nbsp;T\)</span></p>
+<p><span class="math">\(T(2) = T *&nbsp;T\)</span></p>
+<p><span class="math">\(T(3) = T * T *&nbsp;T\)</span></p>
+<p>More generally, we can find <span class="math">\(T\)</span> at any time by&nbsp;saying</p>
+<p><span class="math">\(T(t) = T^t\)</span>.</p>
+<p>The above trick is from a blog post by Fabien Geisen <a href="https://fgiesen.wordpress.com/2012/08/24/quaternion-differentiation/">here</a> but works for any transform that uses multiplication for&nbsp;composition.</p>
+<p>Now that we know <span class="math">\(T(t) = T^t\)</span>, the original equation can be rearranged&nbsp;to</p>
+<p><span class="math">\(x(t) = T^t * x(0)\)</span>.</p>
+<h3>What&#8217;s <span class="math">\(T^t\)</span>?</h3>
+<p>To compute <span class="math">\(T^t\)</span>, we need to use matrix exponentials and matrix&nbsp;logarithms.</p>
+<p>Let&#8217;s start with two facts about a matrix&nbsp;X:</p>
+<p><span class="math">\(e^{log(X)} = X\)</span>&nbsp;and</p>
+<p><span class="math">\(log(X^y) = log(X) * y\)</span>.</p>
+<p>Put together, we can say&nbsp;that</p>
+<p><span class="math">\(T^t = e^{log(T^t)} =&nbsp;e^{log(T)*t}\)</span></p>
+<p>which we can plug into the earlier equation, giving&nbsp;us</p>
+<p><span class="math">\(x(t) = e^{log(T) * t} * x(0)\)</span>.</p>
+<p>This says that to find the point x at time t, find the transform at time t using <span class="math">\(e^{log(T) * t}\)</span>, and use that to transform the point at its initial position (at time&nbsp;0).</p>
+<h3>What&#8217;s the&nbsp;derivative?</h3>
+<p>In calculus, we learned&nbsp;that</p>
+<p><span class="math">\(\dfrac{d}{dt}e^{a t} = a e^{a&nbsp;t}\)</span></p>
+<p>which is also true for&nbsp;matrices:</p>
+<p><span class="math">\(\dfrac{d}{dt}e^{A t} = A e^{A&nbsp;t}\)</span></p>
+<p>Using that, we can find the derivative of our earlier equation <span class="math">\(x(t) = e^{log(T)t} x(0)\)</span> with respect to&nbsp;t:</p>
+<p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) e^{log(T) t} x(0)\)</span>.</p>
+<h3>What&#8217;s this all&nbsp;mean?</h3>
+<p>The&nbsp;equation</p>
+<p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) e^{log(T) t}&nbsp;x(0)\)</span></p>
+<p>(which is the same as <span class="math">\(\dfrac{d}{dt}x(t) = log(T) x(t)\)</span>)</p>
+<p>can be read as: to find the first derivative (tangent vector) of the point at time t, start with the initial position of the point, transform it with the interpolated transform at time t, and then multiply it by the log of the transform. This is using column vector notation, so you should read the operations right-to-left, so the initial position of the point is <span class="math">\(x(0)\)</span>, the interpolated transform is <span class="math">\(e^{log(T) t}\)</span>, and the log of the transform is <span class="math">\(log(T)\)</span>.</p>
+<p>You can think of <span class="math">\(e^{log(T) t}\)</span> as a kind of operator that maps points from their initial position to their new position at time t. I like to think of the matrix exponential as like integration. At time 0, <span class="math">\(e^{log(T) t}\)</span> is the identity matrix (because <span class="math">\(e^0=I\)</span> for matrix exponentials); at time 1.0, <span class="math">\(e^{log(T) t}\)</span> is the original transform matrix T (because <span class="math">\(e^{log(T)}=T\)</span>).</p>
+<p>And, you can think of <span class="math">\(log(T)\)</span> as the vector field of tangent vectors of that transform. In other words, it&#8217;s the field of first derivatives. This vector field is constant with respect to t; it&#8217;s the same field, regardless of what time is. The vector field shows what the velocity is for every point in&nbsp;space.</p>
+<p>That equation is saying that if you transform any point in space by the logarithm of the transform, you will get the first derivative at that point. The first derivative is the velocity, so <span class="math">\(log(T)\)</span> defines the velocity field (the field of tangent vectors at every point in&nbsp;space). </p>
+<p>As x moves through space by the transform matrix, it forms a curve; the tangent vector at time t is tangent to the x&#8217;s position on the curve at time&nbsp;t.</p>
+<p>This insight is really neat: The logarithm of a transform matrix is another matrix that maps positions in space to tangent&nbsp;vectors.</p>
+<p>By analogy, taking the logarithm of a transform matrix is kind of like producing the assembly instructions for that transform. If the transform matrix is like a high level representation of a transform, then the logarithm of the transform matrix is a bunch of tangent vectors which are like low level assembly code. You can take the exponent of the logarithm of the transform matrix, or numerically integrate a point using the log(transform), or solve the matrix exponent directly, or even find a closed form solution for log() and exp() for certain groups of transforms. These have very different meanings for computation, but conceptually, the log of a transform matrix&#8212; really, the log of any matrix&#8212; can be thought of as the velocity field of the action performed by that&nbsp;matrix.</p>
+<p>How can we think of a matrix as a vector field? An eloquent explanation is in 3Blue1Brown&#8217;s video about matrix exponentiation. This part about matrices as vector fields explains that very&nbsp;well:</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/O85OWBJ2ayo?start=1331" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<p>Another way of looking at our equation above is to&nbsp;say</p>
+<p><span class="math">\(velocity = log(transform) *&nbsp;position\)</span></p>
+<p>meaning, to understand how a point will move in time, look at the vector field of the log of the transform as a velocity field. As the point flows along that velocity field, it moves in&nbsp;time.</p>
+<h3>What&#8217;s the <span class="caps">ODE</span>?</h3>
+<p>The above can also be rearranged&nbsp;as</p>
+<p><span class="math">\(\dfrac{d}{dt} x(t) = log(T)&nbsp;x(t)\)</span></p>
+<p>which is a matrix differential equation. <span class="math">\(log(T)\)</span> is just a&nbsp;matrix.</p>
+<p>Just as scalar ordinary differential equations of the form <span class="math">\(y'(t)=ay(t)\)</span> have the solution <span class="math">\(y(t)=e^{at}y(0)\)</span>, matrix differential equations of the form <span class="math">\(x'(t)=Ax(t)\)</span> have the general solution <span class="math">\(x(t)=e^{At}x(0)\)</span>.</p>
+<p>That means that the solution to the matrix differential equation above&nbsp;is</p>
+<p><span class="math">\(x(t) = e^{log(T) t} x(0)\)</span>.</p>
+<h3>Deriving the derivative of the matrix&nbsp;exponential</h3>
+<p><em>Be careful below. The chain rule is correct here, but it only applies in certain circumstances: <a href="https://www.maa.org/sites/default/files/liu03010328120.pdf">A Remark on the Chain Rule for Exponential Matrix&nbsp;Functions</a></em></p>
+<p>Let&#8217;s find the derivative of that equation. Starting&nbsp;with</p>
+<p><span class="math">\(\dfrac{d x(t)}{dt} = (e^{A t}&nbsp;x(0))'\)</span></p>
+<p>we can pull out the constant <span class="math">\(x(0)\)</span></p>
+<p><span class="math">\(\dfrac{d x(t)}{dt} = (e^{A t})'&nbsp;x(0)\)</span></p>
+<p>and then apply the chain&nbsp;rule</p>
+<p><span class="math">\(\dfrac{d x(t)}{dt} = (A t)' e^{A t}&nbsp;x(0)\)</span></p>
+<p>The derivative of <span class="math">\(A t\)</span> with respect to <span class="math">\(t\)</span> is just <span class="math">\(A\)</span>, leaving us&nbsp;with </p>
+<p><span class="math">\(\dfrac{d x(t)}{dt} = A e^{A t} x(0)\)</span>.</p>
+<h3>Deriving the derivative of the matrix exponential, another&nbsp;way</h3>
+<p>The matrix exponential is defined&nbsp;as</p>
+<p><span class="math">\(e^{A t} = I + A t + \frac{1}{2}(A t)^2 + \frac{1}{3!}(A t)^3 +&nbsp;...\)</span></p>
+<p>What then is <span class="math">\(\dfrac{d}{dt}e^{A t}\)</span>? If we take the derivative of each term of the matrix exponential&#8217;s expanded definition, we&nbsp;have</p>
+<p><span class="math">\(\dfrac{d}{dt}e^{A t} = 0 + A + A^2 t + \frac{1}{2} A^3 t^2 +&nbsp;...\)</span></p>
+<p>Pull out A, and then we&nbsp;have</p>
+<p><span class="math">\(\dfrac{d}{dt}e^{A t} = A*(I + A t + \frac{1}{2} (A t)^2 + ...) = A e^{A t}\)</span>.</p>
+<p>If we plug that into the&nbsp;equation</p>
+<p><span class="math">\(\dfrac{d}{dt}x(t) = (e^{A t}&nbsp;x(0))'\)</span></p>
+<p>and pull out the constant <span class="math">\(x(0)\)</span>, the result&nbsp;is</p>
+<p><span class="math">\(\dfrac{d}{dt}x(t) = A e^{A t} x(0)\)</span>.</p>
+<h3>Example:&nbsp;Rotation</h3>
+<p>That differential equation is saying that if you transform any point in space by the logarithm of the transform, you will get the first derivative at that point. The first derivative is the velocity, so <span class="math">\(log(T)\)</span> defines the velocity field (the field of tangent vectors at every point in&nbsp;space).</p>
+<p>One way to see this is to consider rotation matrices. Imagine we have a rotation matrix R and a point x. Then we&nbsp;have</p>
+<p><span class="math">\(\dfrac{d x(t)}{dt} = log(R) * R^t *&nbsp;x(0)\)</span></p>
+<p>which can be read as: starting with the initial point x, rotate it for t units of time, which results in a new point at position x(t). Then, multiply that new point by the the logarithm of <span class="math">\(R\)</span>. That returns the first derivative (the tangent vector) at that new point. Note that <span class="math">\(log(R)\)</span> is independent of time; it returns a different tangent vector for each point in space, but it doesn&#8217;t return a different tangent vector at different&nbsp;times.</p>
+<p>The logarithm of a rotation matrix is a skew symmetric matrix that corresponds to angular velocity. If you are using an axis-angle representation for rotation, the angular velocity vector is <span class="math">\(\omega\)</span>, which is a vector pointing in the direction of the axis of rotation with a length equal to the angle of&nbsp;rotation.</p>
+<h3>WebGL</h3>
+<p><body>
+  <!-- <div id="canvas" style="width: 256px; max-width: 256px; height: 512px; max-height: 512px;"></div> -->
+  <canvas id="canvas" width="512" height="512"></canvas>
+  <div id="overlay">
+    <div>slider <input id="slider" type="range" min="-1" max="2" step="0.01" value="0" /></div>
+    <div>Time: <span id="time"></span></div>
+    <div>Slider Value: <span id="sliderValue"></span></div>
+  </div>
+</body></p>
+<!&#8212; <script type="text/javascript" src="/js/testClearToRed.js"></script> &#8212;>
+
+<script src="/js/three.js/three.min.js"></script>
+
+<script src="/js/three.js/OrbitControls.js"></script>
+
+<script type="module" src="/js/VectorField.js"></script>
+
+<h1>Miscellaneous</h1>
+<p>At time 0, we have <span class="math">\(T(0) = I\)</span> (the identity&nbsp;transform).</p>
+<p>At time 1, we have <span class="math">\(T(1) = T\)</span>.</p>
+<p><span class="math">\(10x^9\)</span></p>
+<p>rocket</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3" id="sidebar">
+            <aside>
+<!-- Sidebar -->
+<section class="well well-sm">
+  <ul class="list-group list-group-flush">
+
+<!-- Sidebar/Social -->
+<li class="list-group-item">
+  <h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+  <ul class="list-group" id="social">
+    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i class="fa fa-twitter-square fa-lg"></i> twitter</a></li>
+    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i class="fa fa-github-square fa-lg"></i> github</a></li>
+  </ul>
+</li>
+<!-- End Sidebar/Social -->
+  </ul>
+</section>
+<!-- End Sidebar -->            </aside>
+        </div>
+    </div>
+</div>
+<!-- End Content Container -->
+
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2020 David Farrell
+            &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>              <p><small>Content licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY-4.0</a></small></p>
+         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="../theme/js/jquery.min.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="../theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="../theme/js/respond.min.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-155088985-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <!-- End Google Analytics Code -->
+
+
+</body>
+</html>

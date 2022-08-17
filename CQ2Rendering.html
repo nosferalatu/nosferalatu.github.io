@@ -9,7 +9,7 @@
 
 
 
-<link rel="canonical" href="/CQ2Rendering.html">
+<link rel="canonical" href="./CQ2Rendering.html">
 
         <meta name="author" content="David Farrell" />
         <meta name="keywords" content="Programming" />
@@ -18,7 +18,7 @@
         <meta property="og:site_name" content="Nosferalatu" />
         <meta property="og:type" content="article"/>
         <meta property="og:title" content="Physically Based Deferred Rendering in Costume Quest 2"/>
-        <meta property="og:url" content="/CQ2Rendering.html"/>
+        <meta property="og:url" content="./CQ2Rendering.html"/>
         <meta property="og:description" content="Rendering in Costume Quest 2"/>
         <meta property="article:published_time" content="2014-11-15" />
             <meta property="article:section" content="Blog" />
@@ -28,13 +28,13 @@
 
 
     <!-- Bootstrap -->
-        <link rel="stylesheet" href="/theme/css/bootstrap.yeti.min.css" type="text/css"/>
-    <link href="/theme/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="./theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="./theme/css/font-awesome.min.css" rel="stylesheet">
 
-    <link href="/theme/css/pygments/emacs.css" rel="stylesheet">
-        <link href="/theme/css/typogrify.css" rel="stylesheet">
-    <link rel="stylesheet" href="/theme/css/style.css" type="text/css"/>
-        <link href="/static/custom.css" rel="stylesheet">
+    <link href="./theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="./theme/css/typogrify.css" rel="stylesheet">
+    <link rel="stylesheet" href="./theme/css/style.css" type="text/css"/>
+        <link href="./static/custom.css" rel="stylesheet">
 
 
 
@@ -50,19 +50,19 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a href="/" class="navbar-brand">
+            <a href="./" class="navbar-brand">
 Nosferalatu            </a>
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
-                         <li><a href="/pages/About.html">
+                         <li><a href="./pages/About.html">
                              About
                           </a></li>
-                         <li><a href="/pages/Projects.html">
+                         <li><a href="./pages/Projects.html">
                              Projects
                           </a></li>
                         <li class="active">
-                            <a href="/category/blog.html">Blog</a>
+                            <a href="./category/blog.html">Blog</a>
                         </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
@@ -83,7 +83,7 @@ Nosferalatu            </a>
         <article>
             <header class="page-header">
                 <h1>
-                    <a href="/CQ2Rendering.html"
+                    <a href="./CQ2Rendering.html"
                        rel="bookmark"
                        title="Permalink to Physically Based Deferred Rendering in Costume Quest 2">
                         Physically Based Deferred Rendering in Costume Quest&nbsp;2
@@ -104,7 +104,7 @@ Nosferalatu            </a>
 
 
 <span class="label label-default">Tags</span>
-	<a href="/tag/programming.html">Programming</a>
+	<a href="./tag/programming.html">Programming</a>
     
 </footer><!-- /.post-info -->                    </div>
                 </div>
@@ -112,13 +112,13 @@ Nosferalatu            </a>
 <p>Much of the engineering schedule for Costume Quest 2 (<span class="caps">CQ2</span>) was taken up with resurrecting support for the old consoles and and bringing up the engine on new consoles. At the beginning of development, Buddha was running only on Windows, and with a bit of fixing up, also on <span class="caps">OSX</span> and Linux. The 360 and <span class="caps">PS3</span> builds had suffered heavily bit rot, and the WiiU port had never been integrated back to our main codebase. Finally, the Buddha engine wasn&#8217;t 64-bit, much less running on XBOne or <span class="caps">PS4</span>.</p>
 <p>As a result, little programming time was left for look development in preproduction. On the plus side, <span class="caps">CQ2</span> was a sequel, so the game&#8217;s art style was a known quantity. Nevertheless, the <span class="caps">CQ2</span> design was more ambitious than the original Costume Quest, including levels in a swampy bayou in New Orleans and a dystopic future where you have to save Halloween from an evil time-traveling&nbsp;dentist.</p>
 <p>We knew we could use the old graphics tech from the original game, but of course, we wanted to improve on the past and do better. We also had the difficult constraint of having to scale from last gen consoles all the way up to modern consoles and desktop <span class="caps">PC</span>&#8217;s. So&#8230; let&#8217;s roll up our sleeves and get to&nbsp;it!</p>
-<p><img alt="test image" src="/images/cq2/cq2_bayou.jpg"></p>
+<p><img alt="test image" src="./images/cq2/cq2_bayou.jpg"></p>
 <h3>Physically Based&nbsp;Rendering</h3>
 <p>Costume Quest&#8217;s aesthetics are inspired more by a comic book art style than the physical constraints of the real world, so you might be wondering how physically based rendering applies to <span class="caps">CQ2</span>. Actually, the game has two separate styles of rendering; the first is for the toon-shaded characters, and the second is for the more traditionally rendered&nbsp;world.</p>
 <p>The first style of rendering is for the characters, which use a toon shader and a cel outline effect. That shading is not even vaguely physically based; if we had more graphics dev time on <span class="caps">CQ2</span>, I would have looked into developing an energy conserving toon shader effect. Instead, the toon shader is a simple 1D lookup texture based on the NdotL of a single light direction. That&#8217;s also the same effect that was used in the original Costume&nbsp;Quest.</p>
 <p>The second style of rendering is for the rest of the world, which uses an energy conserving Blinn-Phong <span class="caps">BRDF</span> lit by a primary shadow-casting sunlight, additional point lights, and a hemisphere light for ambient lighting. All lighting was dynamic, except for prebaked per-vertex ambient occlusion. The Blinn Phong <span class="caps">BRDF</span> was based on <a href="http://renderwonk.com/publications/s2010-shading-course/gotanda/course_note_practical_implementation_at_triace.pdf">Tri-Ace&#8217;s work</a>. We dropped the Fresnel factor, which doesn&#8217;t match the real world but doesn&#8217;t break energy conservation. The Fresnel effect didn&#8217;t fit the art style, and it was a bit cheaper to drop the&nbsp;calculation.</p>
 <p>Here you can see the toon-shaded characters along with a nice specular highlight on the ground:
-<img alt="test image" src="/images/cq2/cq2_street.jpg"></p>
+<img alt="test image" src="./images/cq2/cq2_street.jpg"></p>
 <p>There are two aspects of physically based rendering which are very useful even for games that use nonphotorealistic materials. One aspect is energy conservation, meaning that a surface emits no more light than it receives. This is important because you want materials that work independently of the lighting environment and avoid the production problem of reworking materials after you do a lighting pass and vice versa. When renderers don&#8217;t obey energy conservation, such as with unnormalized Blinn-Phong, you often have to manually adjust the specular color, gloss, and perhaps other ad-hoc factors whenever the lighting changes. Another useful aspect of physically based rendering is that it produces more consistent results by following a few constraints. The number and range of material attributes is better defined, which helped us reason about about which values were important to Costume Quest 2 and how best to pack them into a deferred renderer&#8217;s&nbsp;gbuffer.</p>
 <p><span class="caps">CQ2</span> strayed from realism in many ways but kept those two aspects of physically based rendering. For&nbsp;instance:</p>
 <ul>
@@ -149,7 +149,7 @@ Nosferalatu            </a>
 
 
 <p>In this screenshot, you can see debug visualizations of unpacked data in the gbuffer. Clockwise from top left, they are albedo, normal, specular intensity, roughness, ambient occlusion, and emissive.
-<img alt="test image" src="/images/cq2/cq2_gbuffer.jpg"></p>
+<img alt="test image" src="./images/cq2/cq2_gbuffer.jpg"></p>
 <p>The albedo had to be stored in gamma space as this was an eight bit per channel format. Our pipeline is gamma correct, meaning it does all lighting and blending in linear space, so we had to be sure to convert the albedo colors to sRGB before we wrote them to the framebuffer. Not all platforms had support for per-render-target sRGB writes, so this was done&nbsp;manually.</p>
 <p>Normals were stored in view&nbsp;space.</p>
 <p>The ambient occlusion stored the per-vertex <span class="caps">AO</span>. This needed to be in its own channel (not packed with anything else) because screen-space ambient occlusion blended with this value. Additionally, the character drop shadows would blend with the ambient occlusion&nbsp;channel.</p>
@@ -195,18 +195,19 @@ Nosferalatu            </a>
          <div class="col-xs-10">&copy; 2020 David Farrell
             &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
             <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
-            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>         </div>
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>              <p><small>Content licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY-4.0</a></small></p>
+         </div>
          <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
       </div>
    </div>
 </footer>
-<script src="/theme/js/jquery.min.js"></script>
+<script src="./theme/js/jquery.min.js"></script>
 
 <!-- Include all compiled plugins (below), or include individual files as needed -->
-<script src="/theme/js/bootstrap.min.js"></script>
+<script src="./theme/js/bootstrap.min.js"></script>
 
 <!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
-<script src="/theme/js/respond.min.js"></script>
+<script src="./theme/js/respond.min.js"></script>
 
 
     <!-- Google Analytics -->
