@@ -195,18 +195,34 @@ Nosferalatu            </a>
 <h3>WebGL</h3>
 <p><body>
   <!-- <div id="canvas" style="width: 256px; max-width: 256px; height: 512px; max-height: 512px;"></div> -->
-  <canvas id="canvas" width="512" height="512"></canvas>
+  <div>
+   <div id="canvas-gui-container" style="position:absolute;"></div>
+   <canvas id="canvas" width="512" height="512"></canvas>
+  </div>
   <div id="overlay">
     <div>slider <input id="slider" type="range" min="-1" max="2" step="0.01" value="0" /></div>
     <div>Time: <span id="time"></span></div>
     <div>Slider Value: <span id="sliderValue"></span></div>
   </div>
 </body></p>
+<script type="importmap">
+{
+    "imports":
+    {
+       "lil-gui": "/js/lil-gui/lil-gui.esm.js"
+     }
+}
+</script>
+
 <!&#8212; <script type="text/javascript" src="/js/testClearToRed.js"></script> &#8212;>
 
 <script src="/js/three.js/three.min.js"></script>
 
 <script src="/js/three.js/OrbitControls.js"></script>
+
+<script src="/js/three.js/TransformControls.js"></script>
+
+<!&#8212; <script type="module" src="/js/lil-gui/lil-gui.esm.js"></script> &#8212;>
 
 <script type="module" src="/js/VectorField.js"></script>
 

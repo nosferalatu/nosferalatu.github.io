@@ -1,5 +1,7 @@
+import GUI from 'lil-gui';
+
 var container;
-var camera, scene, renderer, controls;
+var camera, scene, renderer, orbit, xform;
 var mouseX, mouseY;
 var particleMaterial; //an example particle material to use
 var t = 0;//increases each call of render
@@ -24,7 +26,7 @@ var depth = 0.5;
 var wcs = 10;
 var hcs = 10;
 var dcs = 10;
-var cube;
+var cube, cube2;
 var dt = 0.01;
 
 init();
@@ -35,11 +37,52 @@ function $(el){
 }
 
 function computePoints(x,y,z) {
-    //outputs vector based on vectorformula
-	return new THREE.Vector3(eval(vectorFormula[0]), eval(vectorFormula[1]), eval(vectorFormula[2]));
+    // TODO: this gets called before we make cube2; fix that, and then remove this guard
+    if (!cube2)
+        return new THREE.Vector3(0,0,0);
+    
+    var point = new THREE.Vector3(x,y,z);
+
+    // XYZ is imaginary vector part and W is real scalar part
+    var quat = cube2.quaternion;
+
+    var axisAngle;
+    
+    var quatVector = new THREE.Vector3(quat.x, quat.y, quat.z);
+    var quatVMag = quatVector.length();
+    if (quatVMag < 0.0001)
+    {
+        axisAngle = new THREE.Vector3(0,0,0);
+    }
+    else
+    {
+        var angle = 2 * Math.atan2(quatVMag, quat.w);
+        var quatVectorNormalized = quatVector.divideScalar(quatVMag);
+        axisAngle = quatVectorNormalized.multiplyScalar(angle);
+    }
+
+    var matrix = new THREE.Matrix4();
+    matrix.set(0.0, -axisAngle.z, axisAngle.y, 0.0,
+               axisAngle.z, 0.0, -axisAngle.x, 0.0,
+               -axisAngle.y, axisAngle.x, 0.0, 0.0,
+               0.0, 0.0, 0.0, 1.0);
+      
+    point = point.applyMatrix4(matrix);
+    return point;
 }
 
 function init(){
+    var gui = new GUI( { autoPlace: false } );
+    $('canvas-gui-container').appendChild(gui.domElement);
+    
+	const params = {
+		TransformMode: 0,
+	};
+	gui.add( params, 'TransformMode', { Rotate: 0, Translate: 1 } ).onChange( value => {
+        if (value == 0) xform.mode = 'rotate';
+        if (value == 1) xform.mode = 'translate';
+    } );
+    
 	renderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('canvas') });
 
     var canvas = $('canvas');
@@ -57,18 +100,12 @@ function init(){
 	scene = new THREE.Scene();//scene setup
 
 	// controls = new THREE.TrackballControls(camera, $('canvas'));//sets up controls
-    controls = new THREE.OrbitControls(camera, $('canvas'));
-    controls.enableDamping = true;
+    orbit = new THREE.OrbitControls(camera, $('canvas'));
+    orbit.enableDamping = true;
 
     t = 0;
 	var PI2 = Math.PI * 2;//constant for 2pi
 
-	// var normal = new THREE.Vector3( 0, 1, 0 );
-	// var color = new THREE.Color( 0xffaa00 );
-	// var face = new THREE.Face3( 0, 1, 2, normal, color, 0 );
-	// scene.add(face);
-
-    // scene.add(sprite);
     spriteGroup = new THREE.Object3D();
     scene.add(spriteGroup);
     renderer.setClearColor(0x000000);
@@ -76,7 +113,7 @@ function init(){
     createStuff();
     
     setInterval(function(){
-    	cube.material.color.offsetHSL(0.001,0,0);
+    	cube2.material.color.offsetHSL(0.001,0,0);
     },10);
 
     window.addEventListener( 'resize', onWindowResize, false );
@@ -87,15 +124,18 @@ function makeArrow(pos, dir){
 	//dir = dir.normalize();//make sure it's a unit vector
     // const arrowColor = new THREE.Color( 0xffffff );
     const arrowColor = new THREE.Color(1,1,len);
-    var arrow = new THREE.ArrowHelper(dir, pos, 0.5, arrowColor, 0.25, 0.25);
-    arrow.lineWidth = 5.0;
+    //var arrow = new THREE.ArrowHelper(dir, pos, 0.5, arrowColor, 0.25, 0.25);
+    len = len * 1000.0;
+    var headlen = len * 0.5;
+    //headlen = 0.25;
+    var arrow = new THREE.ArrowHelper(dir, pos, len, arrowColor, headlen, headlen);
     return arrow;
 }
 
 function createStuff(){
 	t = 0;
 	
-	scene.children = [];
+//	scene.children = [];
 
 	var light = new THREE.AmbientLight( 0x404040 ); // soft white light
 	scene.add( light );
@@ -141,6 +181,22 @@ function createStuff(){
 	// cube.geometry.dynamic = true
 	// cube.geometry.verticesNeedUpdate = true
 	scene.add( cube );
+
+    var geometry2 = new THREE.BoxGeometry( 1,1,1 );
+    var material2 = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
+    cube2 = new THREE.Mesh( geometry2, material2 );
+    scene.add( cube2 );
+
+	xform = new THREE.TransformControls( camera, $('canvas') );
+	xform.addEventListener( 'change', render );
+	xform.addEventListener( 'dragging-changed', function ( event ) {
+		orbit.enabled = !event.value;
+	} );
+    xform.mode = 'rotate';
+    xform.space = 'local';
+    
+    xform.attach( cube2 );
+	scene.add( xform );
 }
 
 function addArrows(){
@@ -161,8 +217,8 @@ function updateArrows(){
 		var arrow = spriteGroup.children[i];
 		var pos = arrow.position;
 		arrow.setDirection(computePoints(pos.x,pos.y,pos.z));
-        var len = computePoints(pos.x,pos.y,pos.z).length()/10;
-        //arrow.setLength(len, len*0.5, len*0.5);
+        var len = computePoints(pos.x,pos.y,pos.z).length() / 10.0;
+        arrow.setLength(len, len*0.5, len*0.5);
         var arrowColor = new THREE.Color(len,len,len);
         arrowColor.setHSL(0.5, 0.5, len);
         arrow.setColor(arrowColor);
@@ -174,6 +230,8 @@ function animate(){
 	render();
 }
 
+var framenumber = 0;
+
 function render(){
 	camera.lookAt(scene.position);
 	
@@ -182,9 +240,9 @@ function render(){
 		t += dt;
 		updateArrows();
 	}
-		
+
 	//stuff you want to happen continuously here
-	controls.update();
+	orbit.update();
 	renderer.render(scene, camera);
 }
 
@@ -197,11 +255,6 @@ function updateGeometryVertices(){
 		vertex.add(movementVector);//moving the actual thing
 	}
 	cube.geometry.verticesNeedUpdate = true
-	// scene.remove(cube);
-	// cube = new THREE.Mesh( geometry, material );
-	// scene.add( cube );
-	// cube.setGeometry(geometry)
-
 }
 
 // function boxGeo(height, width, hsections, wsections){//a box with only points on the border, with no points on the inside. Will save a shitton of computing time
@@ -259,5 +312,5 @@ function onWindowResize() {
 	camera.aspect = canvasWidth / canvasHeight;
 	camera.updateProjectionMatrix();
 	renderer.setSize(canvasWidth, canvasHeight, false);
-	controls.handleResize();
+	orbit.handleResize();
 }
