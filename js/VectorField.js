@@ -1,4 +1,4 @@
-import GUI from 'lil-gui';
+var GUI = lil.GUI;
 
 var container;
 var camera, scene, renderer, orbit, xform;
