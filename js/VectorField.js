@@ -2,21 +2,8 @@ var GUI = lil.GUI;
 
 var container;
 var camera, scene, renderer, orbit, xform;
-var mouseX, mouseY;
-var particleMaterial; //an example particle material to use
 var t = 0;//increases each call of render
 var pause = false;
-var dtConstant = 10;
-var omega = new THREE.Vector3( 1, 0, 0 );
-var skewSymMatrix = new THREE.Matrix3();
-skewSymMatrix.set(0.0, -omega.z, omega.y,
-                  omega.z, 0.0, -omega.x,
-                  -omega.y, omega.x, 0.0);
-var vectorFormula = [
-    '(new THREE.Vector3(x,y,z)).applyMatrix3(skewSymMatrix).x',
-	'(new THREE.Vector3(x,y,z)).applyMatrix3(skewSymMatrix).y',
-	'(new THREE.Vector3(x,y,z)).applyMatrix3(skewSymMatrix).z'
-];
 var spriteGroup;
 var fsize = 6;
 var ffreq = 3;
@@ -29,6 +16,12 @@ var dcs = 10;
 var cube, cube2;
 var dt = 0.01;
 
+// there's no matrix add in three.js, so create one
+THREE.Matrix3.prototype.add = function(X){
+    for(var i = 0; i < 9; i++)
+        this.elements[i] += X.elements[i];
+};
+
 init();
 animate();
 
@@ -36,38 +29,82 @@ function $(el){
 	return document.getElementById(el);
 }
 
-function computePoints(x,y,z) {
-    // TODO: this gets called before we make cube2; fix that, and then remove this guard
-    if (!cube2)
-        return new THREE.Vector3(0,0,0);
-    
-    var point = new THREE.Vector3(x,y,z);
-
+function log(quat, translation) {
     // XYZ is imaginary vector part and W is real scalar part
-    var quat = cube2.quaternion;
-
-    var axisAngle;
-    
     var quatVector = new THREE.Vector3(quat.x, quat.y, quat.z);
     var quatVMag = quatVector.length();
+    var theta;
+    var A;
+    var B;
+    var C;
+    var axisAngle;
     if (quatVMag < 0.0001)
     {
+        theta = 0;
+        A = 1.0;
+        B = 0.5;
+        C = 1/6.0;
         axisAngle = new THREE.Vector3(0,0,0);
     }
     else
     {
-        var angle = 2 * Math.atan2(quatVMag, quat.w);
+        theta = 2 * Math.atan2(quatVMag, quat.w);
+        A = Math.sin(theta)/theta;
+        B = (1-Math.cos(theta)) / (theta*theta);
+        C = (1-A)/(theta*theta);
         var quatVectorNormalized = quatVector.divideScalar(quatVMag);
-        axisAngle = quatVectorNormalized.multiplyScalar(angle);
+        axisAngle = quatVectorNormalized.multiplyScalar(theta);
     }
 
-    var matrix = new THREE.Matrix4();
-    matrix.set(0.0, -axisAngle.z, axisAngle.y, 0.0,
-               axisAngle.z, 0.0, -axisAngle.x, 0.0,
-               -axisAngle.y, axisAngle.x, 0.0, 0.0,
-               0.0, 0.0, 0.0, 1.0);
-      
-    point = point.applyMatrix4(matrix);
+    var omegaHat = new THREE.Matrix3();
+    omegaHat.set(0.0, -axisAngle.z, axisAngle.y,
+                 axisAngle.z, 0.0, -axisAngle.x,
+                 -axisAngle.y, axisAngle.x, 0.0);
+
+    var logR = new THREE.Matrix3();
+    logR.copy(omegaHat);
+    
+    // https://www.ethaneade.com/lie.pdf equation 76
+    var V_term0 = new THREE.Matrix3();
+    V_term0.identity();
+    var V_term1 = new THREE.Matrix3();
+    V_term1.copy(omegaHat);
+    V_term1.multiplyScalar(B);
+    var V_term2 = new THREE.Matrix3();
+    V_term2.multiplyMatrices(omegaHat, omegaHat);
+    V_term2.multiplyScalar(C);
+    var V = new THREE.Matrix3();
+    V.copy(V_term0);
+    V.add(V_term1);
+    V.add(V_term2);
+    var V_inv = new THREE.Matrix3();
+    V_inv.copy(V).invert();
+
+    var u = new THREE.Vector3();
+    u.copy(translation).applyMatrix3(V_inv);
+
+    var logMatrix = new THREE.Matrix4();
+    logMatrix.set(logR.elements[0], logR.elements[3], logR.elements[6], u.x,
+                  logR.elements[1], logR.elements[4], logR.elements[7], u.y,
+                  logR.elements[2], logR.elements[5], logR.elements[8], u.z,
+                  0.0,               0.0,               0.0,            1.0);
+
+    return logMatrix;
+}
+
+function getVelocity(x,y,z) {
+    // TODO: this gets called before we make cube2; fix that, and then remove this guard
+    if (!cube2)
+        return new THREE.Vector3(0,0,0);
+    
+    var quat = cube2.quaternion;
+    var translation = cube2.position;
+
+    var logMatrix = log(quat, translation);
+    
+    var point = new THREE.Vector3(x,y,z);
+    point = point.applyMatrix4(logMatrix);
+    
     return point;
 }
 
@@ -205,7 +242,7 @@ function addArrows(){
         for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
     		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
     			var start = new THREE.Vector3(x,y,z);
-                var dir = computePoints(x,y,z);
+                var dir = getVelocity(x,y,z);
                 
         		var arrow = makeArrow(start, dir);
         		spriteGroup.add(arrow);
@@ -216,11 +253,13 @@ function updateArrows(){
 	for(var i = 0; i < spriteGroup.children.length; i++){
 		var arrow = spriteGroup.children[i];
 		var pos = arrow.position;
-		arrow.setDirection(computePoints(pos.x,pos.y,pos.z));
-        var len = computePoints(pos.x,pos.y,pos.z).length() / 10.0;
+        var dir = getVelocity(pos.x,pos.y,pos.z);
+        dir = dir.normalize();
+		arrow.setDirection(dir);
+        var len = getVelocity(pos.x,pos.y,pos.z).length() / 10.0;
         arrow.setLength(len, len*0.5, len*0.5);
         var arrowColor = new THREE.Color(len,len,len);
-        arrowColor.setHSL(0.5, 0.5, len);
+        arrowColor.setHSL(0.5, 0.5, len/5.0);
         arrow.setColor(arrowColor);
 	}
 }
@@ -230,13 +269,10 @@ function animate(){
 	render();
 }
 
-var framenumber = 0;
-
 function render(){
 	camera.lookAt(scene.position);
 	
 	if(!pause){
-		updateGeometryVertices();
 		t += dt;
 		updateArrows();
 	}
@@ -244,64 +280,6 @@ function render(){
 	//stuff you want to happen continuously here
 	orbit.update();
 	renderer.render(scene, camera);
-}
-
-function updateGeometryVertices(){
-	for(var vindex in cube.geometry.vertices){
-		var vertex = cube.geometry.vertices[vindex];
-		var offset = scene.localToWorld(vertex.clone()).add(cube.position);//this gets the vertex's position relative to the scene's origin, which is what we want
-		var movementVector = computePoints(offset.x, offset.y, offset.z);
-		movementVector.multiplyScalar(dt * dtConstant);//we don't want it moving too quickly
-		vertex.add(movementVector);//moving the actual thing
-	}
-	cube.geometry.verticesNeedUpdate = true
-}
-
-// function boxGeo(height, width, hsections, wsections){//a box with only points on the border, with no points on the inside. Will save a shitton of computing time
-// 	var geo = new THREE.Geometry();
-// 	for(var x = -width; x <= width; x+= width / wsections)
-// 		for(var y = -height; y <= height; y+= height / hsections)
-// 			if(Math.abs(y) == height || Math.abs(x) == width)//if we're on a border position
-// 				geo.vertices.push(new THREE.Vector3(x,y,0));
-// 	return geo;
-	
-// }
-
-
-function boxGeo(width,height, hsections, wsections){
-
-		var a = {
-			x:-width/2,
-			y:-height/2
-		}
-		
-		var b = {
-			x:width/2,
-			y:height/2
-		}
-		
-		
-		var geometry = new THREE.Geometry();
-		
-		geometry.vertices.push( new THREE.Vector3( a.x, a.y, 0));
-		geometry.vertices.push( new THREE.Vector3( b.x, a.y, 0));
-		geometry.vertices.push( new THREE.Vector3( b.x, b.y, 0));
-		geometry.vertices.push( new THREE.Vector3( a.x, b.y, 0));
-
-		geometry.faces.push( new THREE.Face3( 0, 1, 2 )); // counter-clockwise winding order
-		geometry.faces.push( new THREE.Face3( 0, 2, 3 ));
-		
-		
-		for(var x = -width; x <= width; x+= width / wsections)//now we'll add the little segments
-			for(var y = -height; y <= height; y+= height / hsections)
-				if((Math.abs(y) == height || Math.abs(x) == width) && geometry.vertices.indexOf(new THREE.Vector3(x,y,0)) == -1)//if we're on a border position
-					geometry.vertices.push(new THREE.Vector3(x,y,0));
-		
-		// geometry.computeCentroids();
-		geometry.computeFaceNormals();
-		geometry.computeVertexNormals();
-
-		return geometry
 }
 
 function onWindowResize() {
