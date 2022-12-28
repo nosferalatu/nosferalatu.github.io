@@ -5,18 +5,18 @@ var camera, scene, renderer, orbit, xform;
 var t = 0;//increases each call of render
 var pause = false;
 var spriteGroup;
-var fsize = 6;
+var fsize = 7.5;
 var ffreq = 3;
-var width = 0.5;
-var height = 0.5;
-var depth = 0.5;
+var boxWidth = 0.5;
+var boxHeight = 0.5;
+var boxDepth = 0.5;
 var wcs = 10;
 var hcs = 10;
 var dcs = 10;
 var cube, cube2;
 var dt = 0.01;
 
-// there's no matrix add in three.js, so create one
+// there's no matrix add in three.js's Matrix3, so create one
 THREE.Matrix3.prototype.add = function(X){
     for(var i = 0; i < 9; i++)
         this.elements[i] += X.elements[i];
@@ -29,6 +29,43 @@ function $(el){
 	return document.getElementById(el);
 }
 
+function turbo_colormap(x) {
+  //const kRedVec4 = vec4(0.13572138, 4.61539260, -42.66032258, 132.13108234);
+  //const kGreenVec4 = vec4(0.09140261, 2.19418839, 4.84296658, -14.18503333);
+  //const kBlueVec4 = vec4(0.10667330, 12.64194608, -60.58204836, 110.36276771);
+  //const kRedVec2 = vec2(-152.94239396, 59.28637943);
+  //const kGreenVec2 = vec2(4.27729857, 2.82956604);
+  //const kBlueVec2 = vec2(-89.90310912, 27.34824973);
+
+  // x = saturate(x);
+  x = Math.max(x, 0.0);
+  x = Math.min(x, 1.0);
+    
+  //vec4 v4 = vec4( 1.0, x, x * x, x * x * x);
+  var v4_x = 1.0;
+  var v4_y = x;  
+  var v4_z = x*x;  
+  var v4_w = x*x*x;
+    
+  //vec2 v2 = v4.zw * v4.z;
+  var v2_x = v4_z * v4_z;  
+  var v2_y = v4_w * v4_z;  
+
+  var result = new THREE.Color();
+  //return vec3(
+  //  dot(v4, kRedVec4)   + dot(v2, kRedVec2),
+  //  dot(v4, kGreenVec4) + dot(v2, kGreenVec2),
+  //  dot(v4, kBlueVec4)  + dot(v2, kBlueVec2)
+  //);
+  result.setRGB(
+      v4_x*0.13572138 + v4_y*4.61539260 + v4_z*-42.66032258 + v4_w*132.13108234 + v2_x*-152.94239396 + v2_y*59.28637943,
+      v4_x*0.09140261 + v4_y*2.19418839 + v4_z*4.84296658 + v4_w*-14.18503333 + v2_x*4.27729857 + v2_y*2.82956604,
+      v4_x*0.10667330 + v4_y*12.64194608 + v4_z*-60.58204836 + v4_w*110.36276771 + v2_x*-89.90310912 + v2_y*27.34824973
+  );
+  return result;
+}
+// Returns the logarithm of the quaternion+translation transformation
+// (which is an element in SE(3)). The log is returned as a matrix.
 function log(quat, translation) {
     // XYZ is imaginary vector part and W is real scalar part
     var quatVector = new THREE.Vector3(quat.x, quat.y, quat.z);
@@ -56,6 +93,7 @@ function log(quat, translation) {
         axisAngle = quatVectorNormalized.multiplyScalar(theta);
     }
 
+    // hat operator (converts axis-angle vector to matrix form)
     var omegaHat = new THREE.Matrix3();
     omegaHat.set(0.0, -axisAngle.z, axisAngle.y,
                  axisAngle.z, 0.0, -axisAngle.x,
@@ -156,19 +194,6 @@ function init(){
     window.addEventListener( 'resize', onWindowResize, false );
 }
 
-function makeArrow(pos, dir){
-    var len = dir.length();
-	//dir = dir.normalize();//make sure it's a unit vector
-    // const arrowColor = new THREE.Color( 0xffffff );
-    const arrowColor = new THREE.Color(1,1,len);
-    //var arrow = new THREE.ArrowHelper(dir, pos, 0.5, arrowColor, 0.25, 0.25);
-    len = len * 1000.0;
-    var headlen = len * 0.5;
-    //headlen = 0.25;
-    var arrow = new THREE.ArrowHelper(dir, pos, len, arrowColor, headlen, headlen);
-    return arrow;
-}
-
 function createStuff(){
 	t = 0;
 	
@@ -177,42 +202,15 @@ function createStuff(){
 	var light = new THREE.AmbientLight( 0x404040 ); // soft white light
 	scene.add( light );
 
-	var axesHelper = new THREE.AxesHelper( 15 );
+	var axesHelper = new THREE.AxesHelper( fsize );
 	scene.add( axesHelper )
 
 	scene.add(spriteGroup)
 	addArrows();
 
-    var w = width;
-    var h = height;
-    var d = depth;
     // var sections = 10;
-    var geometry = new THREE.BoxGeometry( w, h, d, wcs, hcs, dcs);//10 width and height segments, which means more shit in our geometry which means a better flow
+    var geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth, wcs, hcs, dcs);//10 width and height segments, which means more shit in our geometry which means a better flow
 
-    // tempgeo = new THREE.BoxGeometry( w, h, 0, sections, sections, 0);//100 width and height segments, which means more shit in our geometry which means a better flow
-    // geometry = boxGeo(3,1,10,10).clone();
-    // geometry = new THREE.Geometry();
-    
-    // for(var x = -w; x <= w; x+= 2*w)
-    // 	for(var x = -w; x <= w; x+= 2*w)
-    
-    // for(var i = 0; i < geometry.vertices.length; i++){
-    // 	var v = geometry.vertices[i];
-    // 	if(Math.abs(v.x) == w/2 || Math.abs(v.y) == h/2)
-    // 		geometry.vertices.push(v.clone());
-    // 	else
-    // 		console.log(v);
-    // }
-//    for(var i = 0; i < geometry.vertices.length(); i++){
-		// var v = geometry.vertices[i];
-
-//        	if(Math.abs(v.x) != w/2 && Math.abs(v.y) != h/2){
-//        		geometry.vertices.splice(i,1);
-//        		i-=1;
-//        	}
-//       }
-
-    // console.log(geometry.vertices.length)
 	var material = new THREE.MeshBasicMaterial( {color: 0x03A678} );//todo - add color to dat-gui
 	cube = new THREE.Mesh( geometry, material );
 	// cube.geometry.dynamic = true
@@ -236,15 +234,22 @@ function createStuff(){
 	scene.add( xform );
 }
 
+function makeArrow(pos, dir){
+    const len = 0.0;
+    const arrowColor = new THREE.Color(1,1,1);
+    const headlen = 0.0;
+    var arrow = new THREE.ArrowHelper(dir, pos, len, arrowColor, headlen, headlen);
+    return arrow;
+}
+
 function addArrows(){
 	spriteGroup.children = [];
 	for(var x = -fsize; x <= fsize; x+=fsize/ffreq)
         for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
     		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
-    			var start = new THREE.Vector3(x,y,z);
+    			var pos = new THREE.Vector3(x,y,z);
                 var dir = getVelocity(x,y,z);
-                
-        		var arrow = makeArrow(start, dir);
+        		var arrow = makeArrow(pos, dir);
         		spriteGroup.add(arrow);
     		}
 }
@@ -253,13 +258,25 @@ function updateArrows(){
 	for(var i = 0; i < spriteGroup.children.length; i++){
 		var arrow = spriteGroup.children[i];
 		var pos = arrow.position;
+        
         var dir = getVelocity(pos.x,pos.y,pos.z);
-        dir = dir.normalize();
-		arrow.setDirection(dir);
-        var len = getVelocity(pos.x,pos.y,pos.z).length() / 10.0;
-        arrow.setLength(len, len*0.5, len*0.5);
-        var arrowColor = new THREE.Color(len,len,len);
-        arrowColor.setHSL(0.5, 0.5, len/5.0);
+
+        var dirN = dir.clone().normalize();
+		arrow.setDirection(dirN);
+        
+        var len = dir.length() / 15.0;
+
+        //Arrow length is proportional to velocity vector
+        //arrow.setLength(len, 0.2, 0.2);
+        
+        //Arrow length is constant
+        var constantArrowLength = fsize/ffreq/2.0;
+        arrow.setLength(constantArrowLength, 0.2, 0.2);
+
+        // Color code arrow using magnitude of velocity
+        var colorlen = dir.length() / 100.0;
+        var arrowColor = turbo_colormap(colorlen);
+        //arrowColor = arrowColor.convertSRGBToLinear();
         arrow.setColor(arrowColor);
 	}
 }
