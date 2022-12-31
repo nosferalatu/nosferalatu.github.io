@@ -112,9 +112,9 @@ Nosferalatu            </a>
 <p>But what if we want to smoothly interpolate <span class="math">\(T\)</span> so it moves x along the path from its initial position to its position transformed by <span class="math">\(T\)</span>? What we want&nbsp;is </p>
 <p><span class="math">\(x(t) = T(t) *&nbsp;x(0)\)</span></p>
 <p>meaning, to find the point x at time t, we multiply the point&#8217;s initial position (<span class="math">\(x(0)\)</span>) by the transform at time t (<span class="math">\(T(t)\)</span>). But since we only have a single matrix <span class="math">\(T\)</span>, we need to find a way to interpolate that matrix in&nbsp;time.</p>
-<p>I want to show how to do that, and also share some interesting insights I learned along the&nbsp;way.</p>
+<p>One way to do that is to raise <span class="math">\(T\)</span> to the power of t using matrix exponentials and matrix logarithms. Interestingly, the matrix logarithm of a transform matrix can be used to easily find the velocity of a point x in space&#8212; the velocity vector (or tangent vector) is just <span class="math">\(log(T) * x\)</span>. This has given me a lot of intuition into both logarithms and exponentials of functions, and a deeper insight into transformation matrices, which I want to share&nbsp;here.</p>
 <h3>Example</h3>
-<p>First, here is an interactive example. As you move the cube around, you can see the vector field change. The vector field is the velocity of the transformation at points in&nbsp;space.</p>
+<p>First, here is an interactive example. As you use the gizmo to rotate and translate the transform, you can see the vector field change. The vector field represents the velocity vector of every point in space as it is being&nbsp;transformed.</p>
 <p><body>
   <!-- <div id="canvas" style="width: 256px; max-width: 256px; height: 512px; max-height: 512px;"></div> -->
   <div>
@@ -180,10 +180,10 @@ Nosferalatu            </a>
 <p>Another way of looking at the equation <span class="math">\(\dfrac{d}{dt}x(t) = log(T) x(t)\)</span> is to&nbsp;say</p>
 <p><span class="math">\(velocity = log(transform) *&nbsp;position\)</span></p>
 <p>meaning, to understand how a point will move in time, look at the vector field of the log of the transform as a velocity field. As the point flows along that velocity field, it moves in&nbsp;time.</p>
-<p>If you are wondering how you can we think of a matrix as a vector field, an eloquent explanation is in 3Blue1Brown&#8217;s video about matrix exponentiation. This part about matrices as vector fields explains that very&nbsp;well:</p>
+<p>If you are wondering how you can visualize a matrix as a vector field, an eloquent explanation is in 3Blue1Brown&#8217;s video about matrix exponentiation. This part about matrices as vector fields explains that very&nbsp;well:</p>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/O85OWBJ2ayo?start=1331" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-<h3>What&#8217;s the <span class="caps">ODE</span>?</h3>
+<h3>What&#8217;s the differential&nbsp;equation?</h3>
 <p>Let&#8217;s look at the equation from earlier <span class="math">\(\dfrac{d}{dt} x(t) = log(T) x(t)\)</span> from the perspective of differential equations. <span class="math">\(log(T)\)</span> is a matrix, so this is more specifically a matrix differential&nbsp;equation.</p>
 <p>Scalar ordinary differential equations of the&nbsp;form</p>
 <p><span class="math">\(y'(t)=ay(t)\)</span></p>

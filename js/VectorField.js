@@ -29,6 +29,7 @@ function $(el){
 	return document.getElementById(el);
 }
 
+// Adapted from https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
 function turbo_colormap(x) {
   //const kRedVec4 = vec4(0.13572138, 4.61539260, -42.66032258, 132.13108234);
   //const kGreenVec4 = vec4(0.09140261, 2.19418839, 4.84296658, -14.18503333);
@@ -64,6 +65,7 @@ function turbo_colormap(x) {
   );
   return result;
 }
+
 // Returns the logarithm of the quaternion+translation transformation
 // (which is an element in SE(3)). The log is returned as a matrix.
 function log(quat, translation) {
@@ -125,12 +127,21 @@ function log(quat, translation) {
     logMatrix.set(logR.elements[0], logR.elements[3], logR.elements[6], u.x,
                   logR.elements[1], logR.elements[4], logR.elements[7], u.y,
                   logR.elements[2], logR.elements[5], logR.elements[8], u.z,
-                  0.0,               0.0,               0.0,            1.0);
+                  0.0,               0.0,               0.0,            0.0);
 
     return logMatrix;
 }
 
-function getVelocity(x,y,z) {
+function mulMatrixPoint(matrix, point)
+{
+    return new THREE.Vector3(
+        matrix.elements[0]*point.x + matrix.elements[4]*point.y + matrix.elements[8]*point.z + matrix.elements[12],
+        matrix.elements[1]*point.x + matrix.elements[5]*point.y + matrix.elements[9]*point.z + matrix.elements[13],
+        matrix.elements[2]*point.x + matrix.elements[6]*point.y + matrix.elements[10]*point.z + matrix.elements[14]
+    );
+}
+
+function getVelocity(point) {
     // TODO: this gets called before we make cube2; fix that, and then remove this guard
     if (!cube2)
         return new THREE.Vector3(0,0,0);
@@ -140,10 +151,9 @@ function getVelocity(x,y,z) {
 
     var logMatrix = log(quat, translation);
     
-    var point = new THREE.Vector3(x,y,z);
-    point = point.applyMatrix4(logMatrix);
+    var velocity = mulMatrixPoint(logMatrix, point);
     
-    return point;
+    return velocity;
 }
 
 function init(){
@@ -248,7 +258,7 @@ function addArrows(){
         for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
     		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
     			var pos = new THREE.Vector3(x,y,z);
-                var dir = getVelocity(x,y,z);
+                var dir = getVelocity(pos);
         		var arrow = makeArrow(pos, dir);
         		spriteGroup.add(arrow);
     		}
@@ -259,7 +269,7 @@ function updateArrows(){
 		var arrow = spriteGroup.children[i];
 		var pos = arrow.position;
         
-        var dir = getVelocity(pos.x,pos.y,pos.z);
+        var dir = getVelocity(pos);
 
         var dirN = dir.clone().normalize();
 		arrow.setDirection(dirN);
