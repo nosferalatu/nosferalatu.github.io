@@ -2,19 +2,20 @@ var GUI = lil.GUI;
 
 var container;
 var camera, scene, renderer, orbit, xform;
-var t = 0;//increases each call of render
+var time = 0;//increases each call of render
 var pause = false;
 var spriteGroup;
-var fsize = 7.5;
+var fsize = 8.0;
 var ffreq = 3;
-var boxWidth = 0.5;
-var boxHeight = 0.5;
-var boxDepth = 0.5;
+var boxWidth = 1.0;
+var boxHeight = 1.0;
+var boxDepth = 1.0;
 var wcs = 10;
 var hcs = 10;
 var dcs = 10;
-var cube, cube2;
+var cube, xformCube;
 var dt = 0.01;
+var clock;
 
 // there's no matrix add in three.js's Matrix3, so create one
 THREE.Matrix3.prototype.add = function(X){
@@ -66,8 +67,8 @@ function turbo_colormap(x) {
   return result;
 }
 
-// Returns the logarithm of the quaternion+translation transformation
-// (which is an element in SE(3)). The log is returned as a matrix.
+// Logarithm of a rigid body transform from a quaternion and translation
+// The log is returned as a matrix
 function log(quat, translation) {
     // XYZ is imaginary vector part and W is real scalar part
     var quatVector = new THREE.Vector3(quat.x, quat.y, quat.z);
@@ -76,13 +77,18 @@ function log(quat, translation) {
     var A;
     var B;
     var C;
+    var D;
     var axisAngle;
     if (quatVMag < 0.0001)
     {
         theta = 0;
         A = 1.0;
         B = 0.5;
-        C = 1/6.0;
+        C = -0.5;
+        // https://www.ethaneade.com/lie.pdf equation 85 has third term of (1-A/2B)/(theta*theta)
+        // That is approximated by the Taylor series from
+        // https://www.wolframalpha.com/input?i=series+%281+-+%28sin%28theta%29%2Ftheta%29%2F%282*%281-cos%28theta%29%29%2F%28theta*theta%29%29+%29+%2F+%28theta+*+theta%29
+        D = 1/12.0;
         axisAngle = new THREE.Vector3(0,0,0);
     }
     else
@@ -90,7 +96,8 @@ function log(quat, translation) {
         theta = 2 * Math.atan2(quatVMag, quat.w);
         A = Math.sin(theta)/theta;
         B = (1-Math.cos(theta)) / (theta*theta);
-        C = (1-A)/(theta*theta);
+        C = -0.5;
+        D = (1-A/(2*B)) / (theta*theta);
         var quatVectorNormalized = quatVector.divideScalar(quatVMag);
         axisAngle = quatVectorNormalized.multiplyScalar(theta);
     }
@@ -104,21 +111,20 @@ function log(quat, translation) {
     var logR = new THREE.Matrix3();
     logR.copy(omegaHat);
     
-    // https://www.ethaneade.com/lie.pdf equation 76
-    var V_term0 = new THREE.Matrix3();
-    V_term0.identity();
-    var V_term1 = new THREE.Matrix3();
-    V_term1.copy(omegaHat);
-    V_term1.multiplyScalar(B);
-    var V_term2 = new THREE.Matrix3();
-    V_term2.multiplyMatrices(omegaHat, omegaHat);
-    V_term2.multiplyScalar(C);
-    var V = new THREE.Matrix3();
-    V.copy(V_term0);
-    V.add(V_term1);
-    V.add(V_term2);
+    // Vinv is I + omegaHat*C + omegaHat*omegaHat*D
+    // from https://www.ethaneade.com/lie.pdf equation 85
+    var Vinv_term0 = new THREE.Matrix3();
+    Vinv_term0.identity();
+    var Vinv_term1 = new THREE.Matrix3();
+    Vinv_term1.copy(omegaHat);
+    Vinv_term1.multiplyScalar(C);
+    var Vinv_term2 = new THREE.Matrix3();
+    Vinv_term2.multiplyMatrices(omegaHat, omegaHat);
+    Vinv_term2.multiplyScalar(D);
     var V_inv = new THREE.Matrix3();
-    V_inv.copy(V).invert();
+    V_inv.copy(Vinv_term0);
+    V_inv.add(Vinv_term1);
+    V_inv.add(Vinv_term2);
 
     var u = new THREE.Vector3();
     u.copy(translation).applyMatrix3(V_inv);
@@ -132,6 +138,91 @@ function log(quat, translation) {
     return logMatrix;
 }
 
+// The matrix exponential of a matrix (computed using log() above)
+// Compute the matrix exponential exp(m * t) and
+// return the result as a matrix
+function exp(m, t)
+{
+    // Pick out the omega (axis-angle vector) and u from the log-matrix
+    var omega = new THREE.Vector3();
+    omega.x = m.elements[6];
+    omega.y = m.elements[8];
+    omega.z = m.elements[1];
+    var u = new THREE.Vector3();
+    u.x = m.elements[12];
+    u.y = m.elements[13];
+    u.z = m.elements[14];
+
+    omega.multiplyScalar(t);
+    u.multiplyScalar(t);
+
+    // https://www.ethaneade.com/lie.pdf equations 77 - 84
+    var theta = omega.length();
+    var A;
+    var B;
+    var C;
+    if (theta < 0.0001)
+    {
+        A = 1.0;
+        B = 0.5;
+        C = -0.5;
+    }
+    else
+    {
+        A = Math.sin(theta)/theta;
+        B = (1 - Math.cos(theta))/(theta*theta);
+        C = (1 - A)/(theta*theta);
+    }
+
+    var omegaHat = new THREE.Matrix3();
+    omegaHat.set(0.0, -omega.z, omega.y,
+                 omega.z, 0.0, -omega.x,
+                 -omega.y, omega.x, 0.0);
+    
+    var R_term0 = new THREE.Matrix3();
+    R_term0.identity();
+    var R_term1 = new THREE.Matrix3();
+    R_term1.copy(omegaHat);
+    R_term1.multiplyScalar(A);
+    var R_term2 = new THREE.Matrix3();
+    R_term2.multiplyMatrices(omegaHat, omegaHat);
+    R_term2.multiplyScalar(B);
+    var R = new THREE.Matrix3();
+    R.copy(R_term0);
+    R.add(R_term1);
+    R.add(R_term2);
+
+    var V_term0 = new THREE.Matrix3();
+    V_term0.identity();
+    var V_term1 = new THREE.Matrix3();
+    V_term1.copy(omegaHat);
+    V_term1.multiplyScalar(B);
+    var V_term2 = new THREE.Matrix3();
+    V_term2.multiplyMatrices(omegaHat, omegaHat);
+    V_term2.multiplyScalar(C);
+    var V = new THREE.Matrix3();
+    V.copy(V_term0);
+    V.add(V_term1);
+    V.add(V_term2);
+
+    var Vu = u.clone();
+    Vu.applyMatrix3(V);
+
+    var expm = new THREE.Matrix4();
+    expm.set(
+        R.elements[0], R.elements[3], R.elements[6], Vu.x,
+        R.elements[1], R.elements[4], R.elements[7], Vu.y,
+        R.elements[2], R.elements[5], R.elements[8], Vu.z,
+        0.0, 0.0, 0.0, 1.0,
+    );
+
+    return expm;
+}
+
+// Multiply the point by the matrix. This assumes the point is a Vector3,
+// so in homogenous coordinates, it is (x,y,z,1). This also assumes the matrix
+// is a Matrix4 with a last row of (0,0,0,0) or (0,0,0,1) (we throw away the
+// w component of the resulting homogenous coordinate).
 function mulMatrixPoint(matrix, point)
 {
     return new THREE.Vector3(
@@ -141,15 +232,10 @@ function mulMatrixPoint(matrix, point)
     );
 }
 
-function getVelocity(point) {
-    // TODO: this gets called before we make cube2; fix that, and then remove this guard
-    if (!cube2)
+function getVelocity(logMatrix, point) {
+    // TODO: this gets called before we make xformCube; fix that, and then remove this guard
+    if (!xformCube)
         return new THREE.Vector3(0,0,0);
-    
-    var quat = cube2.quaternion;
-    var translation = cube2.position;
-
-    var logMatrix = log(quat, translation);
     
     var velocity = mulMatrixPoint(logMatrix, point);
     
@@ -188,7 +274,7 @@ function init(){
     orbit = new THREE.OrbitControls(camera, $('canvas'));
     orbit.enableDamping = true;
 
-    t = 0;
+    time = 0;
 	var PI2 = Math.PI * 2;//constant for 2pi
 
     spriteGroup = new THREE.Object3D();
@@ -197,15 +283,11 @@ function init(){
     
     createStuff();
     
-    setInterval(function(){
-    	cube2.material.color.offsetHSL(0.001,0,0);
-    },10);
-
     window.addEventListener( 'resize', onWindowResize, false );
 }
 
 function createStuff(){
-	t = 0;
+    clock = new THREE.Clock();
 	
 //	scene.children = [];
 
@@ -215,22 +297,24 @@ function createStuff(){
 	var axesHelper = new THREE.AxesHelper( fsize );
 	scene.add( axesHelper )
 
-	scene.add(spriteGroup)
-	addArrows();
-
     // var sections = 10;
-    var geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth, wcs, hcs, dcs);//10 width and height segments, which means more shit in our geometry which means a better flow
+    var geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth, wcs, hcs, dcs);//10 width and height segments, which means more vertices in our geometry which means a better flow under deformation
 
-	var material = new THREE.MeshBasicMaterial( {color: 0x03A678} );//todo - add color to dat-gui
+	var material = new THREE.MeshBasicMaterial( {color: 0xffffffff} );
 	cube = new THREE.Mesh( geometry, material );
 	// cube.geometry.dynamic = true
 	// cube.geometry.verticesNeedUpdate = true
+	//var cubeAxesHelper = new THREE.AxesHelper( fsize/4 );
+	//cube.add( cubeAxesHelper )
 	scene.add( cube );
 
+    // We need a THREE.Object3D to attach the TransformControls to
+    // So just create one that's invisible
     var geometry2 = new THREE.BoxGeometry( 1,1,1 );
     var material2 = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
-    cube2 = new THREE.Mesh( geometry2, material2 );
-    scene.add( cube2 );
+    xformCube = new THREE.Mesh( geometry2, material2 );
+    xformCube.visible = false;
+    scene.add( xformCube );
 
 	xform = new THREE.TransformControls( camera, $('canvas') );
 	xform.addEventListener( 'change', render );
@@ -239,8 +323,11 @@ function createStuff(){
 	} );
     xform.mode = 'rotate';
     xform.space = 'local';
+    xform.attach( xformCube );
     
-    xform.attach( cube2 );
+	scene.add(spriteGroup)
+	addArrows();
+
 	scene.add( xform );
 }
 
@@ -253,25 +340,37 @@ function makeArrow(pos, dir){
 }
 
 function addArrows(){
+    var quat = xformCube.quaternion;
+    var translation = xformCube.position;
+    var logMatrix = log(quat, translation);
+    
 	spriteGroup.children = [];
 	for(var x = -fsize; x <= fsize; x+=fsize/ffreq)
         for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
     		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
     			var pos = new THREE.Vector3(x,y,z);
-                var dir = getVelocity(pos);
+                var dir = getVelocity(logMatrix, pos);
         		var arrow = makeArrow(pos, dir);
         		spriteGroup.add(arrow);
     		}
 }
 
 function updateArrows(){
+    var quat = xformCube.quaternion;
+    var translation = xformCube.position;
+    var logMatrix = log(quat, translation);
+    
 	for(var i = 0; i < spriteGroup.children.length; i++){
 		var arrow = spriteGroup.children[i];
 		var pos = arrow.position;
         
-        var dir = getVelocity(pos);
+        var dir = getVelocity(logMatrix, pos);
 
-        var dirN = dir.clone().normalize();
+        var dirN;
+        if (dir.length() > 0.0)
+            dirN = dir.clone().normalize();
+        else
+            dirN = new THREE.Vector3(0.0, 0.0, 0.0);
 		arrow.setDirection(dirN);
         
         var len = dir.length() / 15.0;
@@ -286,6 +385,11 @@ function updateArrows(){
         // Color code arrow using magnitude of velocity
         var colorlen = dir.length() / 100.0;
         var arrowColor = turbo_colormap(colorlen);
+        if (dir.length() == 0.0)
+        {
+            // turbo_colormap() doesn't go to black, so force 0 length direction as black
+            arrowColor.setRGB(0.0, 0.0, 0.0);
+        }
         //arrowColor = arrowColor.convertSRGBToLinear();
         arrow.setColor(arrowColor);
 	}
@@ -300,8 +404,16 @@ function render(){
 	camera.lookAt(scene.position);
 	
 	if(!pause){
-		t += dt;
+		time += clock.getDelta();
 		updateArrows();
+        //cube.position.set(cube.position);
+        //cube.position.x = 0.01;
+        var quat = xformCube.quaternion;
+        var translation = xformCube.position;
+        var logMatrix = log(quat, translation);
+        var m = exp(logMatrix, (time % 1.0));
+        cube.matrixAutoUpdate = false;
+        cube.matrix.copy(m);
 	}
 
 	//stuff you want to happen continuously here
