@@ -1,21 +1,33 @@
 var GUI = lil.GUI;
 
-var container;
-var camera, scene, renderer, orbit, xform;
-var time = 0;//increases each call of render
-var pause = false;
-var spriteGroup;
 var fsize = 8.0;
 var ffreq = 3;
-var boxWidth = 1.0;
-var boxHeight = 1.0;
-var boxDepth = 1.0;
 var wcs = 10;
 var hcs = 10;
 var dcs = 10;
-var cube, xformCube;
-var dt = 0.01;
+
+var container;
+var camera, scene, renderer, orbit;
+var originAxes;
+var arrowGroup;
+var xformObject;
+var xformControls;
+
+var interpolatedXform;
+var lineMaterial;
+var interpolatedCurveLine;
+
 var clock;
+
+var time = 0;
+
+const params = {
+	GizmoMode: 0,
+    ShowVectorField: true,
+    ShowOriginAxes: true,
+    ShowGizmo: true,
+    ShowInterpolatedTransform: true,
+};
 
 // there's no matrix add in three.js's Matrix3, so create one
 THREE.Matrix3.prototype.add = function(X){
@@ -232,28 +244,14 @@ function mulMatrixPoint(matrix, point)
     );
 }
 
+// To find the velocity (tangent vector) of the point, just multiply by the logarithm of the matrix
+// Note that log(matrix) is independent of t, and can be computed once
 function getVelocity(logMatrix, point) {
-    // TODO: this gets called before we make xformCube; fix that, and then remove this guard
-    if (!xformCube)
-        return new THREE.Vector3(0,0,0);
-    
     var velocity = mulMatrixPoint(logMatrix, point);
-    
     return velocity;
 }
 
 function init(){
-    var gui = new GUI( { autoPlace: false } );
-    $('canvas-gui-container').appendChild(gui.domElement);
-    
-	const params = {
-		TransformMode: 0,
-	};
-	gui.add( params, 'TransformMode', { Rotate: 0, Translate: 1 } ).onChange( value => {
-        if (value == 0) xform.mode = 'rotate';
-        if (value == 1) xform.mode = 'translate';
-    } );
-    
 	renderer = new THREE.WebGLRenderer({ antialias: true, canvas: $('canvas') });
 
     var canvas = $('canvas');
@@ -274,94 +272,104 @@ function init(){
     orbit = new THREE.OrbitControls(camera, $('canvas'));
     orbit.enableDamping = true;
 
-    time = 0;
-	var PI2 = Math.PI * 2;//constant for 2pi
-
-    spriteGroup = new THREE.Object3D();
-    scene.add(spriteGroup);
+    arrowGroup = new THREE.Object3D();
+    scene.add(arrowGroup);
     renderer.setClearColor(0x000000);
     
     createStuff();
     
     window.addEventListener( 'resize', onWindowResize, false );
+
 }
 
 function createStuff(){
     clock = new THREE.Clock();
 	
-//	scene.children = [];
-
 	var light = new THREE.AmbientLight( 0x404040 ); // soft white light
 	scene.add( light );
 
-	var axesHelper = new THREE.AxesHelper( fsize );
-	scene.add( axesHelper )
+	originAxes = new THREE.AxesHelper( fsize );
+	scene.add( originAxes )
 
-    // var sections = 10;
-    var geometry = new THREE.BoxGeometry( boxWidth, boxHeight, boxDepth, wcs, hcs, dcs);//10 width and height segments, which means more vertices in our geometry which means a better flow under deformation
-
-	var material = new THREE.MeshBasicMaterial( {color: 0xffffffff} );
-	cube = new THREE.Mesh( geometry, material );
-	// cube.geometry.dynamic = true
-	// cube.geometry.verticesNeedUpdate = true
-	//var cubeAxesHelper = new THREE.AxesHelper( fsize/4 );
-	//cube.add( cubeAxesHelper )
-	scene.add( cube );
+	interpolatedXform = new THREE.AxesHelper( fsize/4 );
+	scene.add( interpolatedXform );
 
     // We need a THREE.Object3D to attach the TransformControls to
-    // So just create one that's invisible
-    var geometry2 = new THREE.BoxGeometry( 1,1,1 );
-    var material2 = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
-    xformCube = new THREE.Mesh( geometry2, material2 );
-    xformCube.visible = false;
-    scene.add( xformCube );
+    // So just create one that's invisible. We'll call it xformObject
+    var geometry = new THREE.BoxGeometry( 1,1,1 );
+    var material = new THREE.MeshBasicMaterial( {color: 0x0000ff} );
+    xformObject = new THREE.Mesh( geometry, material );
+    xformObject.visible = false;
+    scene.add( xformObject );
 
-	xform = new THREE.TransformControls( camera, $('canvas') );
-	xform.addEventListener( 'change', render );
-	xform.addEventListener( 'dragging-changed', function ( event ) {
+	xformControls = new THREE.TransformControls( camera, $('canvas') );
+	xformControls.addEventListener( 'change', render );
+	xformControls.addEventListener( 'dragging-changed', function ( event ) {
 		orbit.enabled = !event.value;
 	} );
-    xform.mode = 'rotate';
-    xform.space = 'local';
-    xform.attach( xformCube );
+    xformControls.mode = 'rotate';
+    xformControls.space = 'local';
+    xformControls.attach( xformObject );
     
-	scene.add(spriteGroup)
-	addArrows();
+	scene.add(arrowGroup)
+	createArrows();
 
-	scene.add( xform );
+    const lineMaterial = new THREE.LineBasicMaterial({color: 0xffffffff});
+    
+	scene.add( xformControls );
+    
+    var gui = new GUI( { autoPlace: false } );
+    $('canvas-gui-container').appendChild(gui.domElement);
+    
+	gui.add( params, 'GizmoMode', { Rotate: 0, Translate: 1 } ).onChange( value => {
+        if (value == 0) xformControls.mode = 'rotate';
+        if (value == 1) xformControls.mode = 'translate';
+    } );
+    gui.add( params, 'ShowVectorField');
+    gui.add( params, 'ShowOriginAxes');
+    gui.add( params, 'ShowGizmo');
+    gui.add( params, 'ShowInterpolatedTransform');
 }
 
-function makeArrow(pos, dir){
-    const len = 0.0;
-    const arrowColor = new THREE.Color(1,1,1);
-    const headlen = 0.0;
-    var arrow = new THREE.ArrowHelper(dir, pos, len, arrowColor, headlen, headlen);
-    return arrow;
-}
-
-function addArrows(){
-    var quat = xformCube.quaternion;
-    var translation = xformCube.position;
+function createArrows(){
+    var quat = xformObject.quaternion;
+    var translation = xformObject.position;
     var logMatrix = log(quat, translation);
     
-	spriteGroup.children = [];
+    function createArrow(pos, dir){
+        const len = 0.0;
+        const arrowColor = new THREE.Color(1,1,1);
+        const headlen = 0.0;
+        var arrow = new THREE.ArrowHelper(dir, pos, len, arrowColor, headlen, headlen);
+        return arrow;
+    }
+
+	arrowGroup.children = [];
 	for(var x = -fsize; x <= fsize; x+=fsize/ffreq)
         for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
     		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
     			var pos = new THREE.Vector3(x,y,z);
-                var dir = getVelocity(logMatrix, pos);
-        		var arrow = makeArrow(pos, dir);
-        		spriteGroup.add(arrow);
+                var dir = new THREE.Vector3(0,0,0);
+        		var arrow = createArrow(pos, dir);
+        		arrowGroup.add(arrow);
     		}
 }
 
 function updateArrows(){
-    var quat = xformCube.quaternion;
-    var translation = xformCube.position;
+    // Get the pose (transform) of the xformObject
+    // This is a rigid body transform (just rotation and translation)
+    // because we exposed only the rotation and translation gizmo
+    // Rotation is represented as quaternion
+    var quat = xformObject.quaternion;
+    var translation = xformObject.position;
+
+    // Compute the logarithm of the transform
+    // Note that this is independent of time and can be computed
+    // just once outside the inner loop below
     var logMatrix = log(quat, translation);
     
-	for(var i = 0; i < spriteGroup.children.length; i++){
-		var arrow = spriteGroup.children[i];
+	for(var i = 0; i < arrowGroup.children.length; i++){
+		var arrow = arrowGroup.children[i];
 		var pos = arrow.position;
         
         var dir = getVelocity(logMatrix, pos);
@@ -375,10 +383,10 @@ function updateArrows(){
         
         var len = dir.length() / 15.0;
 
-        //Arrow length is proportional to velocity vector
+        // Use this to set arrow length proportional to velocity vector
         //arrow.setLength(len, 0.2, 0.2);
         
-        //Arrow length is constant
+        // Use this to set arrow length as constant
         var constantArrowLength = fsize/ffreq/2.0;
         arrow.setLength(constantArrowLength, 0.2, 0.2);
 
@@ -403,19 +411,40 @@ function animate(){
 function render(){
 	camera.lookAt(scene.position);
 	
-	if(!pause){
-		time += clock.getDelta();
-		updateArrows();
-        //cube.position.set(cube.position);
-        //cube.position.x = 0.01;
-        var quat = xformCube.quaternion;
-        var translation = xformCube.position;
-        var logMatrix = log(quat, translation);
-        var m = exp(logMatrix, (time % 1.0));
-        cube.matrixAutoUpdate = false;
-        cube.matrix.copy(m);
-	}
+	time += clock.getDelta();
+        
+	updateArrows();
+        
+    var quat = xformObject.quaternion;
+    var translation = xformObject.position;
+    var logMatrix = log(quat, translation);
+    var m = exp(logMatrix, (time % 1.0));
+    interpolatedXform.matrixAutoUpdate = false;
+    interpolatedXform.matrix.copy(m);
 
+    const curvePoints = [];
+    for (var t=0.0; t<1.0; t+=0.01)
+    {
+        // the interpolated transform matrix at time t
+        var mAtTimeT = exp(logMatrix, t);
+        curvePoints.push(new THREE.Vector3(mAtTimeT.elements[12], mAtTimeT.elements[13], mAtTimeT.elements[14]));
+    }
+    
+    const curveGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
+    if (interpolatedCurveLine)
+    {
+        scene.remove(interpolatedCurveLine);
+    }
+    interpolatedCurveLine = new THREE.Line(curveGeometry, lineMaterial);
+    scene.add(interpolatedCurveLine);
+
+    arrowGroup.visible = params.ShowVectorField;
+    originAxes.visible = params.ShowOriginAxes;
+    xformControls.visible = params.ShowGizmo;
+    xformControls.enabled = params.ShowGizmo;
+    interpolatedCurveLine.visible = params.ShowInterpolatedTransform;
+    interpolatedXform.visible = params.ShowInterpolatedTransform;
+    
 	//stuff you want to happen continuously here
 	orbit.update();
 	renderer.render(scene, camera);
