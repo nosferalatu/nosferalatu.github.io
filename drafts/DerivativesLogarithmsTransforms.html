@@ -20,7 +20,7 @@
         <meta property="og:title" content="Derivatives, Logarithms, and Transforms"/>
         <meta property="og:url" content="../drafts/DerivativesLogarithmsTransforms.html"/>
         <meta property="og:description" content="Understanding derivatives and logarithms of transforms"/>
-        <meta property="article:published_time" content="2022-08-01" />
+        <meta property="article:published_time" content="2023-01-14" />
             <meta property="article:section" content="Blog" />
             <meta property="article:tag" content="Programming" />
             <meta property="article:author" content="David Farrell" />
@@ -96,7 +96,7 @@ Nosferalatu            </a>
 <footer class="post-info">
     <span class="label label-default">Date</span>
     <span class="published">
-        <i class="fa fa-calendar"></i><time datetime="2022-08-01T21:00:00-07:00"> Mon 01 August 2022</time>
+        <i class="fa fa-calendar"></i><time datetime="2023-01-14T16:00:00-08:00"> Sat 14 January 2023</time>
     </span>
 
 
@@ -114,8 +114,8 @@ Nosferalatu            </a>
 <p>meaning, to find the point <span class="math">\(x\)</span> at time <span class="math">\(t\)</span>, we multiply the point&#8217;s initial position (<span class="math">\(x(0)\)</span>) by the transform at time t (<span class="math">\(T(t)\)</span>). But since we only have a single matrix <span class="math">\(T\)</span>, we need to find a way to interpolate that matrix in&nbsp;time.</p>
 <p>One way to do that is to raise <span class="math">\(T\)</span> to the power of <span class="math">\(t\)</span>, which can be done with the matrix exponential and matrix logarithm. Interestingly, the matrix logarithm of a transform matrix can also be used to easily find the velocity of a point <span class="math">\(x\)</span> in space: the velocity vector (or tangent vector) is just <span class="math">\(log(T) * x\)</span>. This blog post shows how the logarithm and velocity are&nbsp;related.</p>
 <h3>Example</h3>
-<p>To start with, here is an interactive example. As you use the gizmo to rotate and translate the transform, you can see the vector field change. The vector field can be interpreted as the the velocity vector at every point in space as it is being&nbsp;transformed.</p>
-<p>Once you move the gizmo, you can see a small white box moving, which is being interpolated from the identity transform to the gizmo&#8217;s transform every second. As you can see, it&#8217;s following the flow of the velocity vector field. The code is actually using a matrix log and exponential to interpolate the box each&nbsp;frame.</p>
+<p>To start with, here is an interactive example. As you use the gizmo to rotate and translate the transform, you can see the vector field change. The vector field can be interpreted as the the velocity vector at every point in space as the point is being&nbsp;transformed.</p>
+<p>As you move the gizmo, you can see a white curve from the origin to the gizmo&#8217;s transform. Along that curve, you can also see the interpolated transform as it travels from the origin to the gizmo. As you can see, the interpolation follows the flow of the velocity vector field. The code is using the exponential and logarithm of the transform to compute the curve and interpolated&nbsp;transform.</p>
 <p><body>
   <!-- <div id="canvas" style="width: 256px; max-width: 256px; height: 512px; max-height: 512px;"></div> -->
   <div>
@@ -165,7 +165,7 @@ Nosferalatu            </a>
 <p>Using that, we can find the derivative of our earlier equation <span class="math">\(x(t) = e^{log(T)t} x(0)\)</span> with respect to&nbsp;t:</p>
 <p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) e^{log(T) t} x(0)\)</span>.</p>
 <p>This can be read as: to find the first derivative (tangent vector) of the point at time t, start with the initial position of the point, transform it with the interpolated transform at time t, and then multiply it by the log of the transform. This is using column vector notation, so you should read the operations as happening right-to-left: the initial position of the point is <span class="math">\(x(0)\)</span>, the interpolated transform is <span class="math">\(e^{log(T) t}\)</span>, and the log of the transform is <span class="math">\(log(T)\)</span>.</p>
-<p>You can think of <span class="math">\(e^{log(T) t}\)</span> as a kind of operator that maps points from their initial position to their new position at time t. I like to think of the matrix exponential as like integration. At time 0, <span class="math">\(e^{log(T) t}\)</span> is the identity matrix (because <span class="math">\(e^0=I\)</span> for matrix exponentials); at time 1.0, <span class="math">\(e^{log(T) t}\)</span> is the original transform matrix T (because <span class="math">\(e^{log(T)}=T\)</span>).</p>
+<p><span class="math">\(e^{log(T) t}\)</span> is a kind of operator that maps points from their initial position to their new position at time t. I like to think of the matrix exponential as like integration. At time 0, <span class="math">\(e^{log(T) t}\)</span> is the identity matrix (because <span class="math">\(e^0=I\)</span> for matrix exponentials); at time 1.0, <span class="math">\(e^{log(T) t}\)</span> is the original transform matrix T (because <span class="math">\(e^{log(T)}=T\)</span>).</p>
 <h3>What&#8217;s this all&nbsp;mean?</h3>
 <p>If we take the equation at the end of &#8220;What&#8217;s <span class="math">\(T^t\)</span>?&#8221;</p>
 <p><span class="math">\(x(t) = e^{log(T) t}&nbsp;x(0)\)</span></p>
@@ -174,7 +174,7 @@ Nosferalatu            </a>
 <p>then we&nbsp;have:</p>
 <p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) x(t)\)</span>.</p>
 <p>This relates the derivative of a moving point to the logarithm of the transformation moving that&nbsp;point.</p>
-<p>You can think of <span class="math">\(log(T)\)</span> as the vector field of tangent vectors of that transform. In other words, it&#8217;s the field of first derivatives. This vector field is independent of time. It&#8217;s constant with respect to t. The vector field shows what the velocity is for every point in&nbsp;space.</p>
+<p>One way to think of <span class="math">\(log(T)\)</span> is as the vector field of tangent vectors of that transform. In other words, it&#8217;s the field of first derivatives. This vector field is independent of time. It&#8217;s constant with respect to t. The vector field shows what the velocity is for every point in&nbsp;space.</p>
 <p>That equation is saying that if you transform any point in space by the logarithm of the transform, you will get the first derivative at that point. The first derivative is the velocity, so <span class="math">\(log(T)\)</span> defines the velocity field (the field of tangent vectors at every point in&nbsp;space). </p>
 <p>As x moves through space by the transform matrix, it forms a curve; the tangent vector at time t is tangent to the x&#8217;s position on the curve at time&nbsp;t.</p>
 <p>This insight is really neat: The logarithm of a transform matrix is another matrix that maps positions in space to tangent vectors. You can think of the log of a matrix as the velocity field of the action performed by that&nbsp;matrix.</p>
