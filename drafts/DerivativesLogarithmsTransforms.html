@@ -157,12 +157,13 @@ Nosferalatu            </a>
 <p>which we can plug into the earlier equation, giving&nbsp;us</p>
 <p><span class="math">\(x(t) = e^{log(T) * t} * x(0)\)</span>.</p>
 <p>This says that to find the point x at time t, find the transform at time t using <span class="math">\(e^{log(T) * t}\)</span>, and use that to transform the point at its initial position (at time&nbsp;0).</p>
-<h3>What&#8217;s the&nbsp;derivative?</h3>
+<h3 id="WhatsTheDerivative">What&#8217;s the&nbsp;derivative?</h3>
 <p>In calculus, we learned&nbsp;that</p>
 <p><span class="math">\(\dfrac{d}{dt}e^{a t} = a e^{a&nbsp;t}\)</span></p>
 <p>which is also true for&nbsp;matrices:</p>
 <p><span class="math">\(\dfrac{d}{dt}e^{A t} = A e^{A&nbsp;t}\)</span></p>
-<p>Using that, we can find the derivative of our earlier equation <span class="math">\(x(t) = e^{log(T)t} x(0)\)</span> with respect to&nbsp;t:</p>
+<p>A derivation of this can be found below in <a href="#DerivativeOfMatrixExponential">the derivative of the matrix exponential</a>&nbsp;section.</p>
+<p>Using that property, we can find the derivative of our earlier equation <span class="math">\(x(t) = e^{log(T)t} x(0)\)</span> with respect to&nbsp;t:</p>
 <p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) e^{log(T) t} x(0)\)</span>.</p>
 <p>This can be read as: to find the first derivative (tangent vector) of the point at time t, start with the initial position of the point, transform it with the interpolated transform at time t, and then multiply it by the log of the transform. This is using column vector notation, so you should read the operations as happening right-to-left: the initial position of the point is <span class="math">\(x(0)\)</span>, the interpolated transform is <span class="math">\(e^{log(T) t}\)</span>, and the log of the transform is <span class="math">\(log(T)\)</span>.</p>
 <p><span class="math">\(e^{log(T) t}\)</span> is a kind of operator that maps points from their initial position to their new position at time t. I like to think of the matrix exponential as like integration. At time 0, <span class="math">\(e^{log(T) t}\)</span> is the identity matrix (because <span class="math">\(e^0=I\)</span> for matrix exponentials); at time 1.0, <span class="math">\(e^{log(T) t}\)</span> is the original transform matrix T (because <span class="math">\(e^{log(T)}=T\)</span>).</p>
@@ -183,9 +184,9 @@ Nosferalatu            </a>
 <p><span class="math">\(velocity = log(transform) *&nbsp;position\)</span></p>
 <p>meaning, to understand how a point will move in time, look at the vector field of the log of the transform as a velocity field. As the point flows along that velocity field, it moves in&nbsp;time.</p>
 <h3>What&#8217;s the differential&nbsp;equation?</h3>
-<p>Let&#8217;s look at this in a different way&#8212; from the perspective of differential equations. Earlier, we had
-<span class="math">\(\dfrac{d}{dt} x(t) = log(T) x(t)\)</span>
-which is a differential equation, and because <span class="math">\(log(T)\)</span> is a matrix, it is more specifically a matrix differential&nbsp;equation.</p>
+<p>Let&#8217;s look at this in a different way&#8212; from the perspective of differential equations. Earlier, we&nbsp;had</p>
+<p><span class="math">\(\dfrac{d}{dt} x(t) = log(T)&nbsp;x(t)\)</span></p>
+<p>which is a differential equation. Because <span class="math">\(log(T)\)</span> is a matrix, it is more specifically a matrix differential&nbsp;equation.</p>
 <p>Scalar ordinary differential equations of the&nbsp;form</p>
 <p><span class="math">\(y'(t)=ay(t)\)</span></p>
 <p>have the general&nbsp;solution</p>
@@ -198,12 +199,12 @@ which is a differential equation, and because <span class="math">\(log(T)\)</spa
 <p><span class="math">\(\dfrac{d}{dt} x(t) = log(T)&nbsp;x(t)\)</span></p>
 <p>we have the&nbsp;solution</p>
 <p><span class="math">\(x(t) = e^{log(T) t} x(0)\)</span>.</p>
-<p>This is the same as our original equation, but from the opposite&nbsp;direction.</p>
+<p>This is the same as our original equation, but we started with a differential equation and found a solution. To prove this solution is correct, just take the derivative of it, which is what we did earlier in the <a href="#WhatsTheDerivative">What&#8217;s the derivative?</a>&nbsp;section.</p>
 <h3>Visualizing a matrix as a vector&nbsp;field</h3>
 <p>If you are wondering how you can visualize a matrix as a vector field, an eloquent explanation is in 3Blue1Brown&#8217;s video about matrix exponentiation. This part about matrices as vector fields explains that very&nbsp;well:</p>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/O85OWBJ2ayo?start=1331" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-<h3>The derivative of the matrix&nbsp;exponential</h3>
+<h3 id="DerivativeOfMatrixExponential">The derivative of the matrix&nbsp;exponential</h3>
 <p>Earlier we used the property <span class="math">\(\dfrac{d}{dt}e^{A t} = A e^{A t}\)</span>. It&#8217;s not obvious why this property is true, but it&#8217;s an important part of unlocking all of&nbsp;this.</p>
 <p>A good reference for this derivation is in the textbook Modern Robotics. <a href="http://hades.mech.northwestern.edu/index.php/Modern_Robotics">A free copy of that book can be found here</a>. See equation (3.43) in that&nbsp;book.</p>
 <p>The matrix exponential is defined&nbsp;as</p>
