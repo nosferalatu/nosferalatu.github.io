@@ -150,9 +150,10 @@ function log(quat, translation) {
     return logMatrix;
 }
 
-// The matrix exponential of a matrix (computed using log() above)
-// Compute the matrix exponential exp(m * t) and
-// return the result as a matrix
+// This code implements a function "exp" which takes in a matrix m and a scalar value t.
+// It computes the exponential map of a 3D matrix logarithm representation, and returns the result as a 4x4 matrix.
+// It is assumed the matrix m is the matrix representation of the logarithm of a rigid body transform
+// (such as computed with log() above).
 function exp(m, t)
 {
     // Pick out the omega (axis-angle vector) and u from the log-matrix
