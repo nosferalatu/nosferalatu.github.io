@@ -108,14 +108,14 @@ Nosferalatu            </a>
     
 </footer><!-- /.post-info -->                    </div>
                 </div>
-                <p>Given a transform <span class="math">\(T\)</span> and a point x, we can find the transformed point with <span class="math">\(T * x\)</span>. Multiply the point <span class="math">\(x\)</span> by <span class="math">\(T\)</span>, and out pops a new&nbsp;point.</p>
-<p>But what if we want to smoothly interpolate <span class="math">\(T\)</span> so it moves <span class="math">\(x\)</span> along the path from its initial position to its position transformed by <span class="math">\(T\)</span>? What we want&nbsp;is </p>
+                <p>Given a transform <span class="math">\(T\)</span> and a point x, we can find the transformed point with <span class="math">\(T * x\)</span>. But what if we want to smoothly interpolate <span class="math">\(T\)</span> so it moves <span class="math">\(x\)</span> along the path from its initial position to its position transformed by <span class="math">\(T\)</span>? </p>
+<p>What we want to find is the point <span class="math">\(x\)</span> at time <span class="math">\(t\)</span>:</p>
 <p><span class="math">\(x(t) = T(t) *&nbsp;x(0)\)</span></p>
-<p>meaning, to find the point <span class="math">\(x\)</span> at time <span class="math">\(t\)</span>, we multiply the point&#8217;s initial position (<span class="math">\(x(0)\)</span>) by the transform at time t (<span class="math">\(T(t)\)</span>). But since we only have a single transform <span class="math">\(T\)</span>, we need to find a way to interpolate that transform in&nbsp;time.</p>
-<p>One way to do that is to raise <span class="math">\(T\)</span> to the power of <span class="math">\(t\)</span>, which can be done with the exponential and logarithm of a transform. Interestingly, the logarithm of a transform can also be used to easily find the velocity of a point <span class="math">\(x\)</span> in space: the velocity vector (also called the tangent vector) is just <span class="math">\(log(T) * x\)</span>. This blog post shows how the logarithm and velocity are&nbsp;related.</p>
+<p>where <span class="math">\(x(0)\)</span> is the point&#8217;s initial position, and <span class="math">\(T(t)\)</span> is the transform at time <span class="math">\(t\)</span>. Since we have only a single transform <span class="math">\(T\)</span>, we need to find a way to interpolate it over&nbsp;time.</p>
+<p>One way to accomplish this is to raise <span class="math">\(T\)</span> to the power of <span class="math">\(t\)</span>, which can be done using the exponential and logarithm of the transform. Interestingly, the logarithm of a transform can also be used to easily find the velocity of a point <span class="math">\(x\)</span> in space: the velocity vector (also called the tangent vector) is just <span class="math">\(log(T) * x\)</span>. This blog post shows the relationship between the logarithm and&nbsp;velocity.</p>
 <h3>Example</h3>
-<p>To start with, here is an interactive example. As you use the gizmo to rotate and translate the transform, you can see the vector field change. The vector field can be interpreted as the the velocity vector at every point in space as the point is being&nbsp;transformed.</p>
-<p>As you move the gizmo, you can see a white curve from the origin to the gizmo&#8217;s transform. Along that curve, you can also see the interpolated transform as it travels from the origin to the gizmo. As you can see, the interpolation follows the flow of the velocity vector field. The code is using the exponential and logarithm of the transform to compute the curve and interpolated&nbsp;transform.</p>
+<p>Check out this interactive example to see how the vector field changes as you manipulate the gizmo to translate and rotate the transform. The vector field represents the velocity vector at each point in space during the&nbsp;transformation.</p>
+<p>As you move the gizmo, you&#8217;ll notice a white curve that traces the path from the origin to the gizmo&#8217;s transform. Along this curve, you&#8217;ll see the interpolated transform as it travels from the origin to the gizmo. As you can see, the interpolation follows the flow of the velocity vector field. The applet&#8217;s code is using the exponential and logarithm of the transform to compute the curve, interpolated transform, and vector&nbsp;field.</p>
 <p><body>
   <!-- <div id="canvas" style="width: 256px; max-width: 256px; height: 512px; max-height: 512px;"></div> -->
   <div>
@@ -135,6 +135,7 @@ Nosferalatu            </a>
 
 <script src="/js/VectorField.js"></script>
 
+<p>The source code for the applet can be found <a href="../../js/VectorField.js">here</a>, which includes an implementation of closed-form log() and exp() for rigid body&nbsp;transforms.</p>
 <p>Next, I&#8217;ll describe how to compute the interpolated transform and the velocity vector field you see in this&nbsp;example.</p>
 <h3>What&#8217;s <span class="math">\(T(t)\)</span>?</h3>
 <p>We have <span class="math">\(T\)</span>, but not <span class="math">\(T(t)\)</span>, which changes with time. Assuming that multiplying two transforms represents the composition of those transforms, we can find <span class="math">\(T(t)\)</span> by&nbsp;saying</p>
@@ -160,13 +161,13 @@ Nosferalatu            </a>
 <h3 id="WhatsTheDerivative">What&#8217;s the&nbsp;derivative?</h3>
 <p>In calculus, we learned&nbsp;that</p>
 <p><span class="math">\(\dfrac{d}{dt}e^{a t} = a e^{a&nbsp;t}\)</span></p>
-<p>which is also true for&nbsp;matrices:</p>
+<p>which holds true for matrices as&nbsp;well:</p>
 <p><span class="math">\(\dfrac{d}{dt}e^{A t} = A e^{A&nbsp;t}\)</span></p>
-<p>A derivation of this can be found below in <a href="#DerivativeOfMatrixExponential">the derivative of the matrix exponential</a>&nbsp;section.</p>
-<p>Using that property, we can find the derivative of our earlier equation <span class="math">\(x(t) = e^{log(T)t} x(0)\)</span> with respect to&nbsp;t:</p>
+<p>This relationship is explained in more detail in the section <a href="#DerivativeOfMatrixExponential">the derivative of the matrix exponential</a>.</p>
+<p>We can use this property to find the derivative of our earlier equation <span class="math">\(x(t) = e^{log(T)t} x(0)\)</span> with respect to&nbsp;t:</p>
 <p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) e^{log(T) t} x(0)\)</span>.</p>
-<p>This can be read as: to find the first derivative (tangent vector) of the point at time t, start with the initial position of the point, transform it with the interpolated transform at time t, and then multiply it by the log of the transform. This is using column vector notation, so you should read the operations as happening right-to-left: the initial position of the point is <span class="math">\(x(0)\)</span>, the interpolated transform is <span class="math">\(e^{log(T) t}\)</span>, and the log of the transform is <span class="math">\(log(T)\)</span>.</p>
-<p><span class="math">\(e^{log(T) t}\)</span> is a kind of operator that maps points from their initial position to their new position at time t. I like to think of the matrix exponential as like integration. At time 0, <span class="math">\(e^{log(T) t}\)</span> is the identity matrix (because <span class="math">\(e^0=I\)</span> for matrix exponentials); at time 1.0, <span class="math">\(e^{log(T) t}\)</span> is the original transform matrix T (because <span class="math">\(e^{log(T)}=T\)</span>).</p>
+<p>This equation states that to find the first derivative (the velocity vector, also called the tangent vector) of the point at time t, you first transform the point&#8217;s initial position <span class="math">\(x(0)\)</span> with the interpolated transform <span class="math">\(e^{log(T)t}\)</span> and then multiply it by the logarithm of the transform <span class="math">\(log(T)\)</span>. This expression follows the right-to-left convention of column vectors, so you would start with the initial position <span class="math">\(x(0)\)</span>, then apply the interpolated transform <span class="math">\(e^{log(T)t}\)</span>, and finally multiply by the logarithm <span class="math">\(log(T)\)</span>.</p>
+<p><span class="math">\(e^{log(T) t}\)</span> acts as an operator that maps points from their initial position to their new position at time t. The matrix exponential can be thought of as like integration. At time 0, <span class="math">\(e^{log(T) t}\)</span> is the identity matrix (<span class="math">\(e^0=I\)</span> for matrix exponentials), and at time 1.0, <span class="math">\(e^{log(T) t}\)</span> is equal to the original transform matrix T (<span class="math">\(e^{log(T)}=T\)</span>).</p>
 <h3>What&#8217;s this all&nbsp;mean?</h3>
 <p>If we take the equation at the end of &#8220;What&#8217;s <span class="math">\(T^t\)</span>?&#8221;</p>
 <p><span class="math">\(x(t) = e^{log(T) t}&nbsp;x(0)\)</span></p>
@@ -175,12 +176,11 @@ Nosferalatu            </a>
 <p>then we&nbsp;have:</p>
 <p><span class="math">\(\dfrac{d}{dt}x(t) = log(T) x(t)\)</span>.</p>
 <p>This relates the derivative of a moving point to the logarithm of the transformation moving that&nbsp;point.</p>
-<p>One way to think of <span class="math">\(log(T)\)</span> is as the vector field of tangent vectors of that transform. In other words, it&#8217;s the field of first derivatives. This vector field is independent of time. It&#8217;s constant with respect to t. The vector field shows what the velocity is for every point in&nbsp;space.</p>
+<p>One way to think of <span class="math">\(log(T)\)</span> is as a vector field of tangent vectors for the transformation. In other words, it&#8217;s the field of first derivatives. This vector field is independent of time and shows the velocity for every point in&nbsp;space.</p>
 <p>That equation is saying that if you transform any point in space by the logarithm of the transform, you will get the first derivative at that point. The first derivative is the velocity, so <span class="math">\(log(T)\)</span> defines the velocity field (the field of tangent vectors at every point in&nbsp;space). </p>
-<p>As x moves through space by the transform, it forms a curve; the tangent vector at time t is tangent to the x&#8217;s position on the curve at time&nbsp;t.</p>
-<p>This insight is really neat: The logarithm of a transform matrix is another matrix that maps positions in space to tangent vectors. You can think of the log of a matrix as the velocity field of the action performed by that&nbsp;matrix.</p>
-<p>The vector field visualized in the interactive example above is this velocity&nbsp;field.</p>
-<p>A more informal way of looking at the equation <span class="math">\(\dfrac{d}{dt}x(t) = log(T) x(t)\)</span> is to&nbsp;say</p>
+<p>As a point moves through space by the transform, it forms a curve. The tangent vector at time t is tangent to the point&#8217;s position on the curve at time&nbsp;t.</p>
+<p>You can think of the logarithm of a matrix as the velocity field of the action performed by that matrix. The velocity field visualized in the interactive example above is this&nbsp;field.</p>
+<p>A more informal way of looking at this is to&nbsp;say</p>
 <p><span class="math">\(velocity = log(transform) *&nbsp;position\)</span></p>
 <p>meaning, to understand how a point will move in time, look at the vector field of the log of the transform as a velocity field. As the point flows along that velocity field, it moves in&nbsp;time.</p>
 <h3>What&#8217;s the differential&nbsp;equation?</h3>
@@ -201,16 +201,14 @@ Nosferalatu            </a>
 <p><span class="math">\(x(t) = e^{log(T) t} x(0)\)</span>.</p>
 <p>This is the same as our original equation, but we started with a differential equation and found a solution. To prove this solution is correct, just take the derivative of it, which is what we did earlier in the <a href="#WhatsTheDerivative">What&#8217;s the derivative?</a>&nbsp;section.</p>
 <h3>The exponential map and logarithm&nbsp;map</h3>
-<p>The exponential is defined as the infinite&nbsp;series</p>
+<p>The exponential map is defined as the infinite&nbsp;series</p>
 <div class="math">$$e^{A t} = I + A t + \frac{1}{2}(A t)^2 + \frac{1}{3!}(A t)^3 + ... = \sum_{i=0}^{\infty} \frac{(At)^i}{i!}$$</div>
-<p>We first learn about that definition in calculus where it&#8217;s defined on real numbers. However, the exponential infinite series can be applied to other mathematical objects, such as complex numbers, quaternions, and matrices. More generally, it can be used with anything that can multiply with&nbsp;itself.</p>
-<p>For example, square matrices can be multiplied together, and using the above formula you can find the <a href="https://en.wikipedia.org/wiki/Matrix_exponential">matrix exponential</a>. Another example is quaternions, which can be multiplied together, and you can find the <a href="https://en.wikipedia.org/wiki/Quaternion#Functions_of_a_quaternion_variable">quaternion exponential</a>. A counter example is a vector, which cannot multiply by itself and has no exponential&nbsp;function.</p>
+<p>and can be used to find the exponential of real numbers, complex numbers, quaternions, matrices, and more. For example, when square matrices are plugged in to the series, the result is called the <a href="https://en.wikipedia.org/wiki/Matrix_exponential">matrix exponential</a>.</p>
 <p>Similarly, the logarithm is defined as the infinite&nbsp;series</p>
 <div class="math">$$log(A) = \sum_{i=1}^{\infty} (-1)^{i+1} \frac{(A - I)^i}{i}$$</div>
-<p>And we can find the logarithm of not just real numbers, but also complex numbers, quaternions, and&nbsp;matrices.</p>
-<p>If you want to know more, search for the exponential map and logarithm map. These are used in Lie group theory. The exponential map and logarithm map are inverses of each other. In Lie theory, the exponential map maps a tangent vector at a point p to a point on the manifold; and the logarithm map does the opposite&#8212; it maps a point on the manifold back to the tangent vector at p. The logarithm map maps elements in the Lie group to the Lie algebra (the tangent space of the group), and the exponential map maps elements in the Lie algebra to the Lie&nbsp;group.</p>
+<p>If you want to know more, search for the exponential map and logarithm map. You&#8217;ll find that these are important concepts in Lie group theory. The exponential map and logarithm map are inverses of each other. In Lie theory, the exponential map maps a tangent vector at a point p to a point on the manifold. The logarithm map does the opposite, mapping a point on the manifold back to the tangent vector at&nbsp;p.</p>
 <p>When reading about Lie groups, you&#8217;ll come across many different kinds of groups. There are only a few groups that are related to transforms, though. <strong><span class="caps">SO</span>(3)</strong> is a 3D rotation matrix, <strong><span class="caps">SU</span>(2)</strong> is a quaternion, <strong><span class="caps">SE</span>(3)</strong> is a 3D rigid body transform (rotation and translation), <strong><span class="caps">SIM</span>(3)</strong> is rotation, translation, and (positive) uniform scale, and <strong><span class="caps">GL</span>(n)</strong> is an nxn&nbsp;matrix.</p>
-<p>At this point, you might be wondering how to practically compute the exponential and logarithm map for a matrix or other object. There are several&nbsp;options:</p>
+<p>There are several options for how to practically compute the exponential and logarithm map for a matrix or other&nbsp;object:</p>
 <p>1) Use a math library like Eigen or Armadillo. These have functions to compute the matrix exponential and matrix&nbsp;logarithm.</p>
 <p>2) The library Sophus has code for a closed form exp/log for the groups <span class="caps">SO</span>(3), <span class="caps">SE</span>(3), and <span class="caps">SIM</span>(3). Beware that it clamps its quaternions to a 3D rotation angle in -<span class="math">\(\pi\)</span> &#8230; +<span class="math">\(\pi\)</span>&nbsp;though.</p>
 <p>3) There is an excellent <span class="caps">PDF</span> at the web site of Ethan Eade <a href="https://ethaneade.com/lie.pdf">here</a> which contains the closed form equations for the groups <span class="caps">SO</span>(3), <span class="caps">SE</span>(3), and <span class="caps">SIM</span>(3).</p>
@@ -219,19 +217,20 @@ Nosferalatu            </a>
 <h3>Pitfalls</h3>
 <p>There are a few issues that you should be aware&nbsp;of.</p>
 <h4>Pitfall&nbsp;#1</h4>
-<p>The logarithm of a rotation matrix will return a 3D rotation angle in -<span class="math">\(\pi\)</span> &#8230; +<span class="math">\(\pi\)</span>. More technically, there are an infinite number of logarithms of a matrix: one corresponding to the rotation angle in -<span class="math">\(\pi\)</span> &#8230; +<span class="math">\(\pi\)</span>, another one 2<span class="math">\(\pi\)</span> more than that, another one 2<span class="math">\(\pi\)</span> more than that one&#8230; and so on (in both positive and negative directions). Generally matrix logarithm code will return the principal logarithm, which is the logarithm in -<span class="math">\(\pi\)</span> &#8230; +<span class="math">\(\pi\)</span>. This can easily cause a discontinuity when interpolating transforms with rotations in them, such rotations from human joints (you can move your head from looking over your left shoulder to over your right shoulder and rotate a little more than 180&nbsp;degrees).</p>
-<p>The logarithm of a quaternion with return a 3D rotation angle in the larger range of -2<span class="math">\(\pi\)</span> &#8230; +2<span class="math">\(\pi\)</span>. This is one of the properties of quaternions that makes them nice to work with. Although there&#8217;s still a discontinuity when interpolating transforms using quaternions, you have a larger range to work with. Rotations from human joints stay within the rotation that can be specified with two quaternions (you can&#8217;t move your head past 360 degrees, although reading papers about Lie theory sometimes feels that&nbsp;way).</p>
+<p>The logarithm of a rotation matrix will return a 3D rotation angle in -<span class="math">\(\pi\)</span> &#8230; +<span class="math">\(\pi\)</span>. More technically, there are an infinite number of logarithms for a matrix, each corresponding to a rotation angle that is  2<span class="math">\(\pi\)</span> greater than the previous one. Generally matrix logarithm code will return the principal logarithm, which is the logarithm in -<span class="math">\(\pi\)</span> &#8230; +<span class="math">\(\pi\)</span>. This can lead to discontinuities when interpolating transforms with rotations in them, such rotations from human joints (you can move your head from looking over your left shoulder to over your right shoulder and rotate a little more than 180&nbsp;degrees).</p>
+<p>On the other hand, the logarithm of a quaternion returns a 3D rotation angle in the larger range of -2<span class="math">\(\pi\)</span> &#8230; +2<span class="math">\(\pi\)</span>, which makes quaternions nicer to work&nbsp;with.</p>
 <h4>Pitfall&nbsp;#2</h4>
 <p>When working with logarithms, be aware that that the&nbsp;property</p>
 <p><span class="math">\(log(AB) = log(A) +&nbsp;log(B)\)</span></p>
-<p>is <em>only</em> true when A and B commute. Most transforms don&#8217;t commute (such as two rotations). Real numbers always commute, though, so the above property is tempting to apply to&nbsp;transforms.</p>
-<p>For example, you might want to say that &#8220;the logarithm of a rigid body transform (consisting of rotation and translation) is the logarithm of the rotation plus the logarithm of the translation&#8221;. It would be nice if that were true, because the log(rotation) and log(translation) are easier and faster to compute than the log of both of them together, but the result is not the same. Interpolating a transform by using log(rotation) plus log(translation) will cause the transform to move along the straight path between the start and end transform; however, using the correct log(rotation*translation) will cause the interpolated transform to move along a helical, screw path from start to end, which is the correct&nbsp;result.</p>
+<p>is <em>only</em> true when A and B commute, which is not the case for most transforms. Real numbers always commute, though, so the property does apply to them. It&#8217;s tempting to apply the property to transforms, but it&#8217;s important to remember it only applies when A and B&nbsp;commute.</p>
+<p>For example, interpolating a transform by using log(rotation) plus log(translation) will result in a straight path between the start and end transform, but the correct result is a helical, screw path that is obtained by using&nbsp;log(rotation*translation).</p>
 <h4>Pitfall&nbsp;#3</h4>
-<p>Related to pitfall #2, you might want to blend two transforms A and B&nbsp;with</p>
-<p><span class="math">\(lerp(A, B, t) = e^{(1-t)*log(A) +&nbsp;t*log(B)}\)</span></p>
-<p>But be careful: this only works if A and B commute (which, for transforms, they generally do not). Otherwise, this interpolation is neither shortest path nor constant&nbsp;speed.</p>
-<p>Instead, blend the relative (also called delta) transform from A to B, like&nbsp;this:</p>
-<p><span class="math">\(lerp(A, B, t) = e^{log(B A^{-1}) t}&nbsp;A\)</span></p>
+<p>Related to pitfall #2, you might want to interpolate two transforms A and B&nbsp;with</p>
+<p><span class="math">\(interpolate(A, B, t) = e^{(1-t)*log(A) +&nbsp;t*log(B)}\)</span></p>
+<p>But be careful: this only works if A and B commute, which is not usually the case for transforms. Otherwise, this interpolation is neither shortest path nor constant&nbsp;speed.</p>
+<p>Instead, interpolate the relative (also called delta) transform from A to B, like&nbsp;this:</p>
+<p><span class="math">\(interpolate(A, B, t) = e^{log(B A^{-1}) t}&nbsp;A\)</span></p>
+<p>However, this method only works for interpolating between two transforms and not for blending more than two&nbsp;transforms.</p>
 <h3>Visualizing a matrix as a vector&nbsp;field</h3>
 <p>If you are wondering how you can visualize a matrix as a vector field, an eloquent explanation is in 3Blue1Brown&#8217;s video about matrix exponentiation. This part about matrices as vector fields explains that very&nbsp;well:</p>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/O85OWBJ2ayo?start=1331" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -245,9 +244,9 @@ Nosferalatu            </a>
 <p><span class="math">\(\dfrac{d}{dt}e^{A t} = 0 + A + A^2 t + \frac{1}{2} A^3 t^2 +&nbsp;...\)</span></p>
 <p>Pull out A, and then we&nbsp;have</p>
 <p><span class="math">\(\dfrac{d}{dt}e^{A t} = A*(I + A t + \frac{1}{2} (A t)^2 + ...) = A e^{A t}\)</span>.</p>
-<p>Interestingly, note that <span class="math">\(A\)</span> can go on the left or the right. It is always true&nbsp;that</p>
+<p>It&#8217;s worth noting that the matrix <span class="math">\(A\)</span> can go on the left or right, and it always holds true&nbsp;that</p>
 <p><span class="math">\(Ae^{A t} = e^{A&nbsp;t}A\)</span></p>
-<p>for any square matrix (equation (3.44) in Modern&nbsp;Robotics). </p>
+<p>for any square matrix, as stated in equation (3.44) in Modern&nbsp;Robotics.</p>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
         indent = "0em",
