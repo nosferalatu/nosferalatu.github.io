@@ -21,6 +21,8 @@ var clock;
 
 var time = 0;
 
+const MatrixIdentity = (new THREE.Matrix3()).identity();
+
 const params = {
 	GizmoMode: 0,
     ShowVectorField: true,
@@ -30,10 +32,19 @@ const params = {
 };
 
 // there's no matrix add in three.js's Matrix3, so create one
-THREE.Matrix3.prototype.add = function(X){
+function addMatrix3(...args)
+{
+    var result = new THREE.Matrix3();
     for(var i = 0; i < 9; i++)
-        this.elements[i] += X.elements[i];
-};
+    {
+        result.elements[i] = 0;
+        for (var j=0; j<args.length; j++)
+        {
+            result.elements[i] += args[j].elements[i];
+        }
+    }
+    return result;
+}
 
 init();
 animate();
@@ -81,6 +92,7 @@ function turbo_colormap(x) {
 
 // Logarithm of a rigid body transform from a quaternion and translation
 // The log is returned as a matrix
+// See https://www.ethaneade.com/lie.pdf section 3.2
 function log(quat, translation) {
     // XYZ is imaginary vector part and W is real scalar part
     var quatVector = new THREE.Vector3(quat.x, quat.y, quat.z);
@@ -120,26 +132,16 @@ function log(quat, translation) {
                  axisAngle.z, 0.0, -axisAngle.x,
                  -axisAngle.y, axisAngle.x, 0.0);
 
-    var logR = new THREE.Matrix3();
-    logR.copy(omegaHat);
+    var logR = omegaHat.clone();
     
     // Vinv is I + omegaHat*C + omegaHat*omegaHat*D
     // from https://www.ethaneade.com/lie.pdf equation 85
-    var Vinv_term0 = new THREE.Matrix3();
-    Vinv_term0.identity();
-    var Vinv_term1 = new THREE.Matrix3();
-    Vinv_term1.copy(omegaHat);
-    Vinv_term1.multiplyScalar(C);
-    var Vinv_term2 = new THREE.Matrix3();
-    Vinv_term2.multiplyMatrices(omegaHat, omegaHat);
-    Vinv_term2.multiplyScalar(D);
-    var V_inv = new THREE.Matrix3();
-    V_inv.copy(Vinv_term0);
-    V_inv.add(Vinv_term1);
-    V_inv.add(Vinv_term2);
+    var Vinv_term0 = MatrixIdentity.clone();
+    var Vinv_term1 = omegaHat.clone().multiplyScalar(C);
+    var Vinv_term2 = (new THREE.Matrix3()).multiplyMatrices(omegaHat, omegaHat).multiplyScalar(D);
+    var Vinv = addMatrix3(Vinv_term0, Vinv_term1, Vinv_term2);
 
-    var u = new THREE.Vector3();
-    u.copy(translation).applyMatrix3(V_inv);
+    var u = translation.clone().applyMatrix3(Vinv);
 
     var logMatrix = new THREE.Matrix4();
     logMatrix.set(logR.elements[0], logR.elements[3], logR.elements[6], u.x,
@@ -154,17 +156,12 @@ function log(quat, translation) {
 // It computes the exponential map of a 3D matrix logarithm representation, and returns the result as a 4x4 matrix.
 // It is assumed the matrix m is the matrix representation of the logarithm of a rigid body transform
 // (such as computed with log() above).
+// See https://www.ethaneade.com/lie.pdf section 3.2
 function exp(m, t)
 {
     // Pick out the omega (axis-angle vector) and u from the log-matrix
-    var omega = new THREE.Vector3();
-    omega.x = m.elements[6];
-    omega.y = m.elements[8];
-    omega.z = m.elements[1];
-    var u = new THREE.Vector3();
-    u.x = m.elements[12];
-    u.y = m.elements[13];
-    u.z = m.elements[14];
+    var omega = new THREE.Vector3(m.elements[6], m.elements[8], m.elements[1]);
+    var u = new THREE.Vector3(m.elements[12], m.elements[13], m.elements[14]);
 
     omega.multiplyScalar(t);
     u.multiplyScalar(t);
@@ -191,35 +188,18 @@ function exp(m, t)
     omegaHat.set(0.0, -omega.z, omega.y,
                  omega.z, 0.0, -omega.x,
                  -omega.y, omega.x, 0.0);
+
+    var R_term0 = MatrixIdentity.clone();
+    var R_term1 = omegaHat.clone().multiplyScalar(A);
+    var R_term2 = (new THREE.Matrix3()).multiplyMatrices(omegaHat, omegaHat).multiplyScalar(B);
+    var R = addMatrix3(R_term0, R_term1, R_term2);
+
+    var V_term0 = MatrixIdentity.clone();
+    var V_term1 = omegaHat.clone().multiplyScalar(B);
+    var V_term2 = (new THREE.Matrix3()).multiplyMatrices(omegaHat, omegaHat).multiplyScalar(C);
+    var V = addMatrix3(V_term0, V_term1, V_term2);
     
-    var R_term0 = new THREE.Matrix3();
-    R_term0.identity();
-    var R_term1 = new THREE.Matrix3();
-    R_term1.copy(omegaHat);
-    R_term1.multiplyScalar(A);
-    var R_term2 = new THREE.Matrix3();
-    R_term2.multiplyMatrices(omegaHat, omegaHat);
-    R_term2.multiplyScalar(B);
-    var R = new THREE.Matrix3();
-    R.copy(R_term0);
-    R.add(R_term1);
-    R.add(R_term2);
-
-    var V_term0 = new THREE.Matrix3();
-    V_term0.identity();
-    var V_term1 = new THREE.Matrix3();
-    V_term1.copy(omegaHat);
-    V_term1.multiplyScalar(B);
-    var V_term2 = new THREE.Matrix3();
-    V_term2.multiplyMatrices(omegaHat, omegaHat);
-    V_term2.multiplyScalar(C);
-    var V = new THREE.Matrix3();
-    V.copy(V_term0);
-    V.add(V_term1);
-    V.add(V_term2);
-
-    var Vu = u.clone();
-    Vu.applyMatrix3(V);
+    var Vu = u.clone().applyMatrix3(V);
 
     var expm = new THREE.Matrix4();
     expm.set(
