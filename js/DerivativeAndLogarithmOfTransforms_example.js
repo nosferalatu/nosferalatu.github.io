@@ -96,14 +96,10 @@ function turbo_colormap(x) {
 function log(quat, translation) {
     // XYZ is imaginary vector part and W is real scalar part
     var quatVector = new THREE.Vector3(quat.x, quat.y, quat.z);
-    var quatVMag = quatVector.length();
-    var theta;
-    var A;
-    var B;
-    var C;
-    var D;
-    var axisAngle;
-    if (quatVMag < 0.0001)
+    var quatVectorMag = quatVector.length();
+
+    var theta, A, B, C, D, axisAngle;
+    if (quatVectorMag < 0.0001)
     {
         theta = 0;
         A = 1.0;
@@ -117,12 +113,12 @@ function log(quat, translation) {
     }
     else
     {
-        theta = 2 * Math.atan2(quatVMag, quat.w);
+        theta = 2 * Math.atan2(quatVectorMag, quat.w);
         A = Math.sin(theta)/theta;
         B = (1-Math.cos(theta)) / (theta*theta);
         C = -0.5;
         D = (1-A/(2*B)) / (theta*theta);
-        var quatVectorNormalized = quatVector.divideScalar(quatVMag);
+        var quatVectorNormalized = quatVector.divideScalar(quatVectorMag);
         axisAngle = quatVectorNormalized.multiplyScalar(theta);
     }
 
@@ -168,9 +164,7 @@ function exp(m, t)
 
     // https://www.ethaneade.com/lie.pdf equations 77 - 84
     var theta = omega.length();
-    var A;
-    var B;
-    var C;
+    var A, B, C;
     if (theta < 0.0001)
     {
         A = 1.0;
@@ -206,7 +200,7 @@ function exp(m, t)
         R.elements[0], R.elements[3], R.elements[6], Vu.x,
         R.elements[1], R.elements[4], R.elements[7], Vu.y,
         R.elements[2], R.elements[5], R.elements[8], Vu.z,
-        0.0, 0.0, 0.0, 1.0,
+        0.0, 0.0, 0.0, 1.0
     );
 
     return expm;
@@ -327,13 +321,18 @@ function createArrows(){
 
 	arrowGroup.children = [];
 	for(var x = -fsize; x <= fsize; x+=fsize/ffreq)
+    {
         for(var y = -fsize; y <= fsize; y+=fsize/ffreq)
-    		for(var z = -fsize; z <= fsize; z+=fsize/ffreq){
+        {
+    		for(var z = -fsize; z <= fsize; z+=fsize/ffreq)
+            {
     			var pos = new THREE.Vector3(x,y,z);
                 var dir = new THREE.Vector3(0,0,0);
         		var arrow = createArrow(pos, dir);
         		arrowGroup.add(arrow);
     		}
+        }
+    }
 }
 
 function updateArrows(){
@@ -425,7 +424,7 @@ function render(){
     xformControls.enabled = params.ShowGizmo;
     interpolatedCurveLine.visible = params.ShowInterpolatedTransform;
     interpolatedXform.visible = params.ShowInterpolatedTransform;
-    
+
 	//stuff you want to happen continuously here
 	orbit.update();
 	renderer.render(scene, camera);
