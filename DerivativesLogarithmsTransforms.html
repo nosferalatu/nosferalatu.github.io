@@ -223,7 +223,6 @@ Nosferalatu            </a>
 <p>When working with logarithms, be aware that that the&nbsp;property</p>
 <p><span class="math">\(log(AB) = log(A) +&nbsp;log(B)\)</span></p>
 <p>is <em>only</em> true when A and B commute, which is not the case for most transforms. Real numbers always commute, though, so the property does apply to them. It&#8217;s tempting to apply the property to transforms, but it&#8217;s important to remember it only applies when A and B&nbsp;commute.</p>
-<p>For example, interpolating a transform by using log(rotation) plus log(translation) will result in a straight path between the start and end transform, but the correct result is a helical, screw path that is obtained by using&nbsp;log(rotation*translation).</p>
 <h4>Pitfall&nbsp;#3</h4>
 <p>Related to pitfall #2, you might want to interpolate two transforms A and B&nbsp;with</p>
 <p><span class="math">\(interpolate(A, B, t) = e^{(1-t)*log(A) +&nbsp;t*log(B)}\)</span></p>
@@ -248,7 +247,7 @@ Nosferalatu            </a>
 <p><span class="math">\(Ae^{A t} = e^{A&nbsp;t}A\)</span></p>
 <p>for any square matrix, as stated in equation (3.44) in Modern&nbsp;Robotics.</p>
 <h3>Comments</h3>
-<p>Leave comments on Github Issues <a href="https://github.com/nosferalatu/nosferalatu.github.io/issues/1">here</a>.</p>
+<p>Leave comments on this post with Github Issues <a href="https://github.com/nosferalatu/nosferalatu.github.io/issues/1">here</a>.</p>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
         indent = "0em",
