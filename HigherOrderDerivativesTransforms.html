@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
 <head>
-    <title>Pelican and Math Equations - Nosferalatu</title>
+    <title>Higher Order Derivatives of Transforms - Nosferalatu</title>
     <!-- Using the latest rendering mode for IE -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="utf-8">
@@ -9,20 +9,20 @@
 
 
 
-<link rel="canonical" href="./Pelican.html">
+<link rel="canonical" href="./HigherOrderDerivativesTransforms.html">
 
         <meta name="author" content="David Farrell" />
-        <meta name="keywords" content="Blog" />
-        <meta name="description" content="Pelican and Math Equations" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Calculating the higher order derivatives of transforms" />
 
         <meta property="og:site_name" content="Nosferalatu" />
         <meta property="og:type" content="article"/>
-        <meta property="og:title" content="Pelican and Math Equations"/>
-        <meta property="og:url" content="./Pelican.html"/>
-        <meta property="og:description" content="Pelican and Math Equations"/>
-        <meta property="article:published_time" content="2016-11-27" />
+        <meta property="og:title" content="Higher Order Derivatives of Transforms"/>
+        <meta property="og:url" content="./HigherOrderDerivativesTransforms.html"/>
+        <meta property="og:description" content="Calculating the higher order derivatives of transforms"/>
+        <meta property="article:published_time" content="2024-01-27" />
             <meta property="article:section" content="Blog" />
-            <meta property="article:tag" content="Blog" />
+            <meta property="article:tag" content="Programming" />
             <meta property="article:author" content="David Farrell" />
 
 
@@ -83,10 +83,10 @@ Nosferalatu            </a>
         <article>
             <header class="page-header">
                 <h1>
-                    <a href="./Pelican.html"
+                    <a href="./HigherOrderDerivativesTransforms.html"
                        rel="bookmark"
-                       title="Permalink to Pelican and Math Equations">
-                        Pelican and Math&nbsp;Equations
+                       title="Permalink to Higher Order Derivatives of Transforms">
+                        Higher Order Derivatives of&nbsp;Transforms
                     </a>
                 </h1>
             </header>
@@ -96,7 +96,7 @@ Nosferalatu            </a>
 <footer class="post-info">
     <span class="label label-default">Date</span>
     <span class="published">
-        <i class="fa fa-calendar"></i><time datetime="2016-11-27T12:00:00-08:00"> Sun 27 November 2016</time>
+        <i class="fa fa-calendar"></i><time datetime="2024-01-27T23:00:00-08:00"> Sat 27 January 2024</time>
     </span>
 
 
@@ -104,36 +104,52 @@ Nosferalatu            </a>
 
 
 <span class="label label-default">Tags</span>
-	<a href="./tag/blog.html">Blog</a>
+	<a href="./tag/programming.html">Programming</a>
     
 </footer><!-- /.post-info -->                    </div>
                 </div>
-                <p>This blog uses the static site generator <a href="http://www.getpelican.com">Pelican</a>. Here&#8217;s how you can set up Pelican to
-render LaTeX math&nbsp;equations.</p>
-<p>In your Pelican content directory (mine is <code>c:\blog\source</code>), clone the <a href="https://github.com/getpelican/pelican-plugins">Pelican plugins
-repository</a>:</p>
-<div class="highlight"><pre><span></span>cd c:\blog\source
-git submodule add https://github.com/getpelican/pelican-plugins.git plugins
-</pre></div>
+                <p>In <a href="DerivativesLogarithmsTransforms.html">a previous post</a> I discussed the relationship between derivatives, logarithms, and transforms. This blog post adds to that and explains how to find the second and higher order derivatives of a&nbsp;transform.</p>
+<h3>The Concept of Derivatives of&nbsp;Transforms</h3>
+<p>Let&#8217;s quickly recap my earlier blog post. Suppose we have a transform <span class="math">\(T\)</span> and a point at the initial position of <span class="math">\(x(0)\)</span>. The position of the point at time t and the first derivative of that point&nbsp;are</p>
+<p><span class="math">\(x(t) = T^t *&nbsp;x(0)\)</span></p>
+<p><span class="math">\(x'(t) = log(T) * x(t)\)</span>.</p>
+<p>where <span class="math">\(log(T)\)</span> is the logarithm of the transform. Both <span class="math">\(T\)</span> and <span class="math">\(log(T)\)</span> are constant with respect to&nbsp;t.</p>
+<h3>What&#8217;s the second&nbsp;derivative?</h3>
+<p>We know the first derivative (<span class="math">\(x'(t) = log(T) * x(t)\)</span>), so to find the second derivative, we start&nbsp;with</p>
+<p><span class="math">\(\dfrac{d}{dt}x'(t) = \dfrac{d}{dt}log(T) *&nbsp;x(t)\)</span></p>
+<p>Since <span class="math">\(log(T)\)</span> is constant with respect to time, we then&nbsp;have</p>
+<p><span class="math">\(x''(t) = log(T) *&nbsp;\dfrac{d}{dt}x(t)\)</span></p>
+<p>and earlier we stated that <span class="math">\(x'(t) = log(T) * x(t)\)</span>, so we just plug that in, giving us our&nbsp;answer:</p>
+<p><span class="math">\(x''(t) = log(T) * log(T) * x(t)\)</span>.</p>
+<p>Neat! In other words, if we have the first derivative, then the second derivative is just another multiplication by <span class="math">\(log(T)\)</span>.</p>
+<p>In the earlier blog post, we found the tangent vector of a point by multiplying the point by <span class="math">\(log(T)\)</span>. Similarly, we can now find the acceleration vector of a point by multiplying it by <span class="math">\(log(T) * log(T)\)</span>.</p>
+<h3>What&#8217;s the nth&nbsp;derivative?</h3>
+<p>The beauty of this approach is how simple it is. For the nth derivative, we can follow the same pattern. More generally, the nth derivative&nbsp;is</p>
+<p><span class="math">\(x^{n}(t) = log(T)^n *&nbsp;x(t)\)</span></p>
+<h3>Interactive&nbsp;Example</h3>
+<p>Here&#8217;s an interactive example where you can see the tangent vector (green arrow) and acceleration vector (red arrow) of a point as it is interpolated from the origin to the gizmo&#8217;s transform. You can manipulate the gizmo to translate and rotate the transform. You can also enable a visualization of the velocity vector field or the acceleration vector&nbsp;field.</p>
+<p>The source code for the applet can be found <a href="../../js/HigherOrderDerivativesOfTransforms_example.js">here</a>.</p>
+<p><body>
+  <!-- <div id="canvas" style="width: 256px; max-width: 256px; height: 512px; max-height: 512px;"></div> -->
+  <div>
+   <div id="canvas-gui-container" style="position:absolute;"></div>
+   <canvas id="canvas" width="512" height="512"></canvas>
+  </div>
+</body></p>
+<script src="/js/three.js/three.min.js"></script>
 
+<script src="/js/three.js/OrbitControls.js"></script>
 
-<p>Then modify your pelicanconf.py file to point at the path to the plugins and then which plugins you want to&nbsp;use:</p>
-<div class="highlight"><pre><span></span>PLUGIN_PATHS=[&#39;./plugins&#39;]
-PLUGINS = [&#39;render_math&#39;]
-</pre></div>
+<script src="/js/three.js/TransformControls.js"></script>
 
+<script type="module" src="/js/three.js/VRButton.js"></script>
 
-<p><a href="https://github.com/getpelican/pelican-plugins/tree/master/render_math">render_math</a> is a Pelican plugin for rendering
-LaTeX. That plugin extends Markdown so that anything in between <code>$...$</code> is rendered as math. For&nbsp;example:</p>
-<p><code>$x^2$</code> becomes <span class="math">\(x^2\)</span></p>
-<p><code>$e=mc^2$</code> becomes <span class="math">\(e=mc^2\)</span></p>
-<p><code>$\left| \nabla \phi \right| = 1$</code> becomes <span class="math">\(\left| \nabla \phi \right| =&nbsp;1\)</span></p>
-<p>You can also use <code>$$...$$</code> to put the equation in a new paragraph, like&nbsp;this: </p>
-<div class="math">$$\dfrac {\partial \phi } {\partial t} + u \cdot \nabla \phi = 1$$</div>
-<h1>E-Z&nbsp;LaTeX</h1>
-<p>I don&#8217;t know LaTeX, but there are apps that will convert handwritten equations to LaTeX. I&#8217;ve been using an app called
-MyScript that works well. They have a web demo here: <a href="http://webdemo.myscript.com/views/math.html">http://webdemo.myscript.com/views/math.html</a></p>
-<p>With that, I can scribble some equations, and then cut and paste the LaTeX into Markdown, and easily create nice looking&nbsp;equations.</p>
+<script src="/js/lil-gui/lil-gui@0.17.umd.js"></script>
+
+<script src="/js/HigherOrderDerivativesOfTransforms_example.js"></script>
+
+<h3>Comments</h3>
+<p>Leave comments on this post with Github Issues <a href="https://github.com/nosferalatu/nosferalatu.github.io/issues/2">here</a>.</p>
 <script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
     var align = "center",
         indent = "0em",
