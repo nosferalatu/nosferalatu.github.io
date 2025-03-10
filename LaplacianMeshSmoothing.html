@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
+<head>
+    <title>Laplacian Mesh Smoothing by Throwing Vertices - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<link rel="canonical" href="./LaplacianMeshSmoothing.html">
+
+        <meta name="author" content="David Farrell" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Laplacian Mesh Smoothing by Throwing Vertices" />
+
+        <meta property="og:site_name" content="Nosferalatu" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Laplacian Mesh Smoothing by Throwing Vertices"/>
+        <meta property="og:url" content="./LaplacianMeshSmoothing.html"/>
+        <meta property="og:description" content="Laplacian Mesh Smoothing by Throwing Vertices"/>
+        <meta property="article:published_time" content="2025-03-09" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:author" content="David Farrell" />
+
+
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="./theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="./theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="./theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="./theme/css/typogrify.css" rel="stylesheet">
+    <link rel="stylesheet" href="./theme/css/style.css" type="text/css"/>
+        <link href="./static/custom.css" rel="stylesheet">
+
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="./" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="./pages/About.html">
+                             About
+                          </a></li>
+                         <li><a href="./pages/Projects.html">
+                             Projects
+                          </a></li>
+                        <li class="active">
+                            <a href="./category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<!-- Banner -->
+<!-- End Banner -->
+
+<!-- Content Container -->
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="./LaplacianMeshSmoothing.html"
+                       rel="bookmark"
+                       title="Permalink to Laplacian Mesh Smoothing by Throwing Vertices">
+                        Laplacian Mesh Smoothing by Throwing&nbsp;Vertices
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2025-03-09T21:00:00-07:00"> Sun 09 March 2025</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="./tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>In this blog post, I&#8217;ll talk about smoothing and blurring 3D meshes using Laplacian mesh smoothing. A good example of where this is useful is Adobe Substance 3D Modeler&#8217;s <a href="https://helpx.adobe.com/substance-3d-modeler/create-with-clay/tools/smooth-tool.html">smooth tool</a> which I implemented using Laplacian mesh smoothing. Laplacian mesh smoothing works by iteratively shifting each vertex towards the average position of that vertex&#8217;s neighbors. The math formula for this&nbsp;is:</p>
+<div class="math">$$v_i = \frac{1}{N} \sum_{j=1}^{N} v_j$$</div>
+<p>which we can implement in code&nbsp;as:</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">Vertex</span><span class="o">&amp;</span> <span class="nl">vertex</span> <span class="p">:</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">vec3</span> <span class="n">avrgPosition</span> <span class="o">=</span> <span class="n">vec3</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="n">Vertex</span><span class="o">&amp;</span> <span class="nl">vertexNeighbor</span> <span class="p">:</span> <span class="n">neighbors</span><span class="p">(</span><span class="n">vertex</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="n">avrgPosition</span> <span class="o">+=</span> <span class="n">vertexNeighbor</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">avrgPosition</span> <span class="o">/=</span> <span class="n">numNeighbors</span><span class="p">(</span><span class="n">vertex</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Run that a few times, and the mesh smooths out like magic. It&#8217;s important to note that this process only changes the vertex data of the mesh; the connectivity (triangle indices) are&nbsp;unchanged.</p>
+<p>The above is straightforward except that we need the <code>neighbors()</code> and <code>numNeighbors()</code> functions. While one approach is to build a half-edge mesh data structure, which gives us information about the connectivity of the mesh, this blog post will show two alternative methods that can be used when the mesh is two-manifold (where each edge connects exactly two&nbsp;triangles).</p>
+<h3>The One Pass Trick: Throwing&nbsp;Vertices</h3>
+<p>Forget about neighbor lookups. Instead, we&#8217;ll iterate over the triangle faces directly, leveraging the fact that every edge in a two-manifold mesh connects exactly two triangles. Instead of precomputing neighbors, we accumulate neighbor positions on the fly in a single pass over the&nbsp;faces.</p>
+<p>This process is often called <em>throwing vertices</em>, a term used in libraries like libigl. It refers to accumulating vertex positions at their connected neighbors and then averaging them. For a triangle formed by vertices A, B, and C, we define three directed half-edges: <code>A-&gt;B</code>, <code>B-&gt;C</code>, and <code>C-&gt;A</code>. As we traverse these half-edges, we accumulate the source vertex position at the destination vertex position and count how many times each vertex gets updated. This effectively computes the sum of all neighboring vertex positions for each vertex. Once we have this sum, we divide by the count to get the new, smoothed&nbsp;position.</p>
+<p>Here&#8217;s the&nbsp;implementation:</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">vec3</span><span class="o">&gt;</span> <span class="n">accumulated</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">numNeighbors</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="k">auto</span><span class="o">&amp;</span> <span class="nl">triangle</span> <span class="p">:</span> <span class="n">mesh</span><span class="p">.</span><span class="n">triangles</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">vertexIndex0</span> <span class="o">=</span> <span class="n">triangle</span><span class="p">.</span><span class="n">index0</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">vertexIndex1</span> <span class="o">=</span> <span class="n">triangle</span><span class="p">.</span><span class="n">index1</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">vertexIndex2</span> <span class="o">=</span> <span class="n">triangle</span><span class="p">.</span><span class="n">index2</span><span class="p">;</span>
+
+    <span class="c1">// vertexIndex0 -&gt; vertexIndex1</span>
+    <span class="n">accumulated</span><span class="p">[</span><span class="n">vertexIndex1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">vertexIndex0</span><span class="p">];</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">vertexIndex1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="c1">// vertexIndex1 -&gt; vertexIndex2</span>
+    <span class="n">accumulated</span><span class="p">[</span><span class="n">vertexIndex2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">vertexIndex1</span><span class="p">];</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">vertexIndex2</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="c1">// vertexIndex2 -&gt; vertexIndex0</span>
+    <span class="n">accumulated</span><span class="p">[</span><span class="n">vertexIndex0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">vertexIndex2</span><span class="p">];</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">vertexIndex0</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">accumulated</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">numNeighbors</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>And there you go: a Laplacian smoothing pass without needing to precompute any data, or create a half-edge data&nbsp;structure.</p>
+<p>If you want to make the mesh smoother, just apply more passes of the above. And if you want to slow down the smoothing process, just use a fractional&nbsp;pass:</p>
+<div class="highlight"><pre><span></span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">lerp</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">accumulated</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">numNeighbors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">fractionalAmount</span><span class="p">);</span>
+</pre></div>
+
+
+<p>This method is simple and&nbsp;effective.</p>
+<h3>Squeezing Out Performance with&nbsp;Parallelism</h3>
+<p>The above approach works well in single threaded scenarios but doesn&#8217;t work in multithreading code or on GPUs. The problem is the simultaneous writes to the <code>accumulated</code> and <code>numNeighbors</code> arrays by different threads.  This falls into the problematic category of mutable, shared data. For example, if different threads process separate triangles, they may concurrently modify the same vertex shared by those&nbsp;triangles.</p>
+<h4>Atomic Mayhem: Things Get <span class="caps">MESI</span></h4>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="n">vec3</span><span class="o">&gt;&gt;</span> <span class="n">accumulated</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&gt;</span> <span class="n">numNeighbors</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+</pre></div>
+
+
+<p>This works to allow multiple threads to run the smoothing code in parallel. However, atomic operations aren&#8217;t free, and cache contention will slow this down on both CPUs and GPUs. In my own tests on CPUs, I&#8217;ve found that using this with multiple threads is slower than the single-threaded non-atomic version. That may or may not apply to your case, so please profile your situation before/after you try&nbsp;this.</p>
+<h4>A Cleaner Way: Precompute&nbsp;Neighbors</h4>
+<p>A better solution is to precompute the neighbor list once and reuse it across multiple smoothing passes. That looks like&nbsp;this:</p>
+<div class="highlight"><pre><span></span><span class="c1">// Find the number of neighbors of each vertex</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">numNeighbors</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+<span class="kt">int</span> <span class="n">totalNeighbors</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="k">auto</span><span class="o">&amp;</span> <span class="nl">triangle</span> <span class="p">:</span> <span class="n">mesh</span><span class="p">.</span><span class="n">triangles</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index0</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index2</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">totalNeighbors</span> <span class="o">+=</span> <span class="mi">3</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Prefix sum</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">neighborsStartIndex</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+<span class="kt">int</span> <span class="n">currentIndex</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">numNeighbors</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">neighborsStartIndex</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">currentIndex</span><span class="p">;</span>
+    <span class="n">currentIndex</span> <span class="o">+=</span> <span class="n">numNeighbors</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="c1">// Populate the neighbors array</span>
+<span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">neighbors</span><span class="p">(</span><span class="n">totalNeighbors</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="n">std</span><span class="o">::</span><span class="n">fill</span><span class="p">(</span><span class="n">numNeighbors</span><span class="p">.</span><span class="n">begin</span><span class="p">(),</span> <span class="n">numNeighbors</span><span class="p">.</span><span class="n">end</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="k">auto</span><span class="o">&amp;</span> <span class="nl">triangle</span> <span class="p">:</span> <span class="n">mesh</span><span class="p">.</span><span class="n">triangles</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// vertexIndex0 -&gt; vertexIndex1</span>
+    <span class="n">neighbors</span><span class="p">[</span><span class="n">neighborsStartIndex</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index1</span><span class="p">]</span> <span class="o">+</span> <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">triangle</span><span class="p">.</span><span class="n">index0</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="c1">// vertexIndex1 -&gt; vertexIndex2</span>
+    <span class="n">neighbors</span><span class="p">[</span><span class="n">neighborsStartIndex</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index2</span><span class="p">]</span> <span class="o">+</span> <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">triangle</span><span class="p">.</span><span class="n">index1</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index2</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="c1">// vertexIndex2 -&gt; vertexIndex0</span>
+    <span class="n">neighbors</span><span class="p">[</span><span class="n">neighborsStartIndex</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index0</span><span class="p">]</span> <span class="o">+</span> <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">triangle</span><span class="p">.</span><span class="n">index2</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangle</span><span class="p">.</span><span class="n">index0</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>With this, a smoothing pass can process each vertex in&nbsp;parallel.</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">vec3</span><span class="o">&gt;</span> <span class="n">result</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="c1">// this for() loop can now operate on each vertex in parallel;</span>
+<span class="c1">// the result[] array holds the new mesh vertices</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">j</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">j</span><span class="o">&lt;</span><span class="n">numNeighbors</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">neighborIndex</span> <span class="o">=</span> <span class="n">neighbors</span><span class="p">[</span><span class="n">neighborStartIndex</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">j</span><span class="p">];</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">neighborIndex</span><span class="p">]</span> <span class="o">/</span> <span class="n">numNeighbors</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Once the <code>neighbors</code> and <code>numNeighbors</code> list is built, we never have to touch it&nbsp;again.</p>
+<h3>Vertex&nbsp;Normals</h3>
+<p>Once the vertices are smoothed, vertex normals will need to be recomputed. That can be done with the same trick: iterate over faces, compute the face normal, and throw to that face&#8217;s&nbsp;vertices.</p>
+<div class="highlight"><pre><span></span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">vec3</span><span class="o">&gt;</span> <span class="n">accumulated</span><span class="p">(</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="k">const</span> <span class="k">auto</span><span class="o">&amp;</span> <span class="nl">triangle</span> <span class="p">:</span> <span class="n">mesh</span><span class="p">.</span><span class="n">triangles</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">vec3</span> <span class="n">v0</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index0</span><span class="p">];</span>
+    <span class="n">vec3</span> <span class="n">v1</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index1</span><span class="p">];</span>
+    <span class="n">vec3</span> <span class="n">v2</span> <span class="o">=</span> <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index2</span><span class="p">];</span>
+    <span class="n">vec3</span> <span class="n">faceNormal</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">cross</span><span class="p">(</span><span class="n">v1</span><span class="o">-</span><span class="n">v0</span><span class="p">,</span> <span class="n">v2</span><span class="o">-</span><span class="n">v0</span><span class="p">));</span>
+
+    <span class="n">accumulated</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index0</span><span class="p">]</span> <span class="o">+=</span> <span class="n">faceNormal</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index0</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="n">accumulated</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">faceNormal</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index1</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+
+    <span class="n">accumulated</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index2</span><span class="p">]</span> <span class="o">+=</span> <span class="n">faceNormal</span><span class="p">;</span>
+    <span class="n">numNeighbors</span><span class="p">[</span><span class="n">triangles</span><span class="p">.</span><span class="n">index2</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">.</span><span class="n">size</span><span class="p">();</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">mesh</span><span class="p">.</span><span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">accumulated</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>If you want more accurate results, use angle- or area-weighted normals. That&#8217;s another rabbit hole, but a good reference is at <a href="http://www.bytehazard.com/articles/vertnorm.html">Weighted Vertex Normals</a>. </p>
+<h3>Comments</h3>
+<p>Leave comments on this post with Github Issues <a href="https://github.com/nosferalatu/nosferalatu.github.io/issues/3">here</a>.</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3" id="sidebar">
+            <aside>
+<!-- Sidebar -->
+<section class="well well-sm">
+  <ul class="list-group list-group-flush">
+
+<!-- Sidebar/Social -->
+<li class="list-group-item">
+  <h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+  <ul class="list-group" id="social">
+    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i class="fa fa-twitter-square fa-lg"></i> twitter</a></li>
+    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i class="fa fa-github-square fa-lg"></i> github</a></li>
+  </ul>
+</li>
+<!-- End Sidebar/Social -->
+  </ul>
+</section>
+<!-- End Sidebar -->            </aside>
+        </div>
+    </div>
+</div>
+<!-- End Content Container -->
+
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2025 David Farrell
+            &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>              <p><small>Content licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY-4.0</a></small></p>
+         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="./theme/js/jquery.min.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="./theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="./theme/js/respond.min.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-155088985-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <!-- End Google Analytics Code -->
+
+
+</body>
+</html>
