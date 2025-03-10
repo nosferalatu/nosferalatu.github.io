@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns# fb: https://www.facebook.com/2008/fbml">
+<head>
+    <title>Code Multiplication - Nosferalatu</title>
+    <!-- Using the latest rendering mode for IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+<link rel="canonical" href="../drafts/CodeMultiplication.html">
+
+        <meta name="author" content="David Farrell" />
+        <meta name="keywords" content="Programming" />
+        <meta name="description" content="Code Multiplication" />
+
+        <meta property="og:site_name" content="Nosferalatu" />
+        <meta property="og:type" content="article"/>
+        <meta property="og:title" content="Code Multiplication"/>
+        <meta property="og:url" content="../drafts/CodeMultiplication.html"/>
+        <meta property="og:description" content="Code Multiplication"/>
+        <meta property="article:published_time" content="2014-06-08" />
+            <meta property="article:section" content="Blog" />
+            <meta property="article:tag" content="Programming" />
+            <meta property="article:author" content="David Farrell" />
+
+
+
+    <!-- Bootstrap -->
+        <link rel="stylesheet" href="../theme/css/bootstrap.yeti.min.css" type="text/css"/>
+    <link href="../theme/css/font-awesome.min.css" rel="stylesheet">
+
+    <link href="../theme/css/pygments/emacs.css" rel="stylesheet">
+        <link href="../theme/css/typogrify.css" rel="stylesheet">
+    <link rel="stylesheet" href="../theme/css/style.css" type="text/css"/>
+        <link href="../static/custom.css" rel="stylesheet">
+
+
+
+</head>
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="../" class="navbar-brand">
+Nosferalatu            </a>
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+            <ul class="nav navbar-nav">
+                         <li><a href="../pages/About.html">
+                             About
+                          </a></li>
+                         <li><a href="../pages/Projects.html">
+                             Projects
+                          </a></li>
+                        <li class="active">
+                            <a href="../category/blog.html">Blog</a>
+                        </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+</div> <!-- /.navbar -->
+
+<!-- Banner -->
+<!-- End Banner -->
+
+<!-- Content Container -->
+<div class="container">
+    <div class="row">
+        <div class="col-sm-9">
+    <section id="content">
+        <article>
+            <header class="page-header">
+                <h1>
+                    <a href="../drafts/CodeMultiplication.html"
+                       rel="bookmark"
+                       title="Permalink to Code Multiplication">
+                        Code&nbsp;Multiplication
+                    </a>
+                </h1>
+            </header>
+            <div class="entry-content">
+                <div class="panel">
+                    <div class="panel-body">
+<footer class="post-info">
+    <span class="label label-default">Date</span>
+    <span class="published">
+        <i class="fa fa-calendar"></i><time datetime="2014-06-08T12:00:00-07:00"> Sun 08 June 2014</time>
+    </span>
+
+
+
+
+
+<span class="label label-default">Tags</span>
+	<a href="../tag/programming.html">Programming</a>
+    
+</footer><!-- /.post-info -->                    </div>
+                </div>
+                <p>Specializing code at compile time is often useful for high performance code. I&#8217;ve heard this specific technique referred to as <em>code multiplication</em>. A google search doesn&#8217;t find anything with that name, so I&#8217;ll describe it&nbsp;here.</p>
+<p>Say you have some code that does different things based on N boolean parameters. What we want to do is create 2^N different permutations of that function, each one specialized for a specific set of input values. At runtime, we&#8217;ll go through a jump table of functions to execute the permutation we want. I&#8217;ll describe a couple of ways to do that. For the examples below, here&#8217;s the function that we&#8217;ll be&nbsp;specializing:</p>
+<div class="highlight"><pre><span></span><span class="err">int compute_sum(bool branch0, bool branch1, bool branch2)</span>
+<span class="err">{</span>
+<span class="err">    int sum = 0;</span>
+<span class="err">    if (branch0)</span>
+<span class="err">       sum |= 1;</span>
+<span class="err">    if (branch1)</span>
+<span class="err">       sum |= 2;</span>
+<span class="err">    if (branch3)</span>
+<span class="err">       sum |= 4;</span>
+<span class="err">    return sum;</span>
+<span class="err">}</span>
+</pre></div>
+
+
+<h1>C&nbsp;Preprocessor</h1>
+<p>You can use the C preprocessor to generate the permutations by having one file contain code that is driven by <code>#define</code><span class="quo">&#8216;</span>s, and a second file that <code>#include</code><span class="quo">&#8216;</span>s the first file over and over&nbsp;again:</p>
+<div class="highlight"><pre><span></span><span class="err">// FunctionKernel.h</span>
+<span class="err">int compute_sum_##FN_NAME()</span>
+<span class="err">{</span>
+<span class="err">    int sum = 0;</span>
+<span class="err">    #if BRANCH0</span>
+<span class="err">        sum |= 1;</span>
+<span class="err">    #endif</span>
+<span class="err">    #if BRANCH1</span>
+<span class="err">        sum |= 2;</span>
+<span class="err">    #endif</span>
+<span class="err">    #if BRANCH2</span>
+<span class="err">        sum |= 4;</span>
+<span class="err">    #endif</span>
+<span class="err">}</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="o">//</span><span class="w"> </span><span class="k">Function</span><span class="p">.</span><span class="n">cpp</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">FFF</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">FFT</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">FTF</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">FTT</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">TFF</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">TFT</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">0</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">TTF</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"> </span><span class="mi">1</span><span class="w"></span>
+<span class="n">#define</span><span class="w"> </span><span class="n">FN_NAME</span><span class="w"> </span><span class="n">TTT</span><span class="w"></span>
+<span class="n">#include</span><span class="w"> </span><span class="ss">&quot;FunctionKernel.h&quot;</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH0</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH1</span><span class="w"></span>
+<span class="n">#undef</span><span class="w"> </span><span class="n">BRANCH2</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">NUM_BRANCHES</span><span class="w"> </span><span class="mi">3</span><span class="w"></span>
+<span class="nc">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">specialized_fn</span><span class="p">)()</span><span class="w"> </span><span class="n">fn_table</span><span class="o">[</span><span class="n">1 &lt;&lt; NUM_BRANCHES</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_FFF</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_FFT</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_FTF</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_FTT</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_TFF</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_TFT</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_TTF</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_TTT</span><span class="p">,</span><span class="w"></span>
+<span class="err">}</span><span class="p">;</span><span class="w"></span>
+
+<span class="nc">int</span><span class="w"> </span><span class="n">compute_sum</span><span class="p">(</span><span class="n">bool</span><span class="w"> </span><span class="n">branch0</span><span class="p">,</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="n">branch1</span><span class="p">,</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="n">branch2</span><span class="p">)</span><span class="w"></span>
+<span class="err">{</span><span class="w"></span>
+<span class="w">    </span><span class="nc">int</span><span class="w"> </span><span class="n">permutation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">branch0</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                      </span><span class="p">(</span><span class="n">branch1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                      </span><span class="p">(</span><span class="n">branch2</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">fn_table</span><span class="o">[</span><span class="n">permutation</span><span class="o">]</span><span class="p">();</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</pre></div>
+
+
+<h1>Function&nbsp;Templates</h1>
+<p>For C++ code, an alternative is to use <em>function templates</em> to have the compiler generate the permutations. For&nbsp;example:</p>
+<div class="highlight"><pre><span></span><span class="n">template</span><span class="w"> </span><span class="o">&lt;</span><span class="n">bool</span><span class="w"> </span><span class="n">branch0</span><span class="p">,</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="n">branch1</span><span class="p">,</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="n">branch2</span><span class="o">&gt;</span><span class="w"></span>
+<span class="nc">int</span><span class="w"> </span><span class="n">compute_sum_fn</span><span class="p">()</span><span class="w"></span>
+<span class="err">{</span><span class="w"></span>
+<span class="w">    </span><span class="nc">int</span><span class="w"> </span><span class="nf">sum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">branch0</span><span class="p">)</span><span class="w"></span>
+<span class="w">       </span><span class="nf">sum</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">branch1</span><span class="p">)</span><span class="w"></span>
+<span class="w">       </span><span class="nf">sum</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">branch3</span><span class="p">)</span><span class="w"></span>
+<span class="w">       </span><span class="nf">sum</span><span class="w"> </span><span class="o">|=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nf">sum</span><span class="p">;</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+
+<span class="n">#define</span><span class="w"> </span><span class="n">NUM_BRANCHES</span><span class="w"> </span><span class="mi">3</span><span class="w"></span>
+<span class="nc">int</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">specialized_fn</span><span class="p">)()</span><span class="w"> </span><span class="n">fn_table</span><span class="o">[</span><span class="n">1 &lt;&lt; NUM_BRANCHES</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="err">{</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="w"> </span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">false</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">true</span><span class="w"> </span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">false</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">false</span><span class="p">,</span><span class="w"> </span><span class="k">true</span><span class="w"> </span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">false</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="o">&amp;</span><span class="n">compute_sum_fn</span><span class="o">&lt;</span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">true</span><span class="p">,</span><span class="w">  </span><span class="k">true</span><span class="w"> </span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="err">}</span><span class="p">;</span><span class="w"></span>
+
+<span class="nc">int</span><span class="w"> </span><span class="n">compute_sum</span><span class="p">(</span><span class="n">bool</span><span class="w"> </span><span class="n">branch0</span><span class="p">,</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="n">branch1</span><span class="p">,</span><span class="w"> </span><span class="n">bool</span><span class="w"> </span><span class="n">branch2</span><span class="p">)</span><span class="w"></span>
+<span class="err">{</span><span class="w"></span>
+<span class="w">    </span><span class="nc">int</span><span class="w"> </span><span class="n">permutation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">branch0</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                      </span><span class="p">(</span><span class="n">branch1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                      </span><span class="p">(</span><span class="n">branch2</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">fn_table</span><span class="o">[</span><span class="n">permutation</span><span class="o">]</span><span class="p">();</span><span class="w"></span>
+<span class="err">}</span><span class="w"></span>
+</pre></div>
+
+
+<p>An optimizing compiler will see that the values in each <code>compute_sum_fn()</code> permutation are constant and remove the&nbsp;branches. </p>
+<p>I generally shy away from C++ class templates, but function templates can be very useful for code generation. In the above example, the function template version produces the same results as the C preprocessor version but with fewer lines of&nbsp;code.</p>
+            </div>
+            <!-- /.entry-content -->
+        </article>
+    </section>
+
+        </div>
+        <div class="col-sm-3" id="sidebar">
+            <aside>
+<!-- Sidebar -->
+<section class="well well-sm">
+  <ul class="list-group list-group-flush">
+
+<!-- Sidebar/Social -->
+<li class="list-group-item">
+  <h4><i class="fa fa-home fa-lg"></i><span class="icon-label">Social</span></h4>
+  <ul class="list-group" id="social">
+    <li class="list-group-item"><a href="http://twitter.com/nosferalatu"><i class="fa fa-twitter-square fa-lg"></i> twitter</a></li>
+    <li class="list-group-item"><a href="http://github.com/nosferalatu"><i class="fa fa-github-square fa-lg"></i> github</a></li>
+  </ul>
+</li>
+<!-- End Sidebar/Social -->
+  </ul>
+</section>
+<!-- End Sidebar -->            </aside>
+        </div>
+    </div>
+</div>
+<!-- End Content Container -->
+
+<footer>
+   <div class="container">
+      <hr>
+      <div class="row">
+         <div class="col-xs-10">&copy; 2025 David Farrell
+            &middot; Powered by <a href="https://github.com/getpelican/pelican-themes/tree/master/pelican-bootstrap3" target="_blank">pelican-bootstrap3</a>,
+            <a href="http://docs.getpelican.com/" target="_blank">Pelican</a>,
+            <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>              <p><small>Content licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY-4.0</a></small></p>
+         </div>
+         <div class="col-xs-2"><p class="pull-right"><i class="fa fa-arrow-up"></i> <a href="#">Back to top</a></p></div>
+      </div>
+   </div>
+</footer>
+<script src="../theme/js/jquery.min.js"></script>
+
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script src="../theme/js/bootstrap.min.js"></script>
+
+<!-- Enable responsive features in IE8 with Respond.js (https://github.com/scottjehl/Respond) -->
+<script src="../theme/js/respond.min.js"></script>
+
+
+    <!-- Google Analytics -->
+    <script type="text/javascript">
+
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-155088985-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function () {
+            var ga = document.createElement('script');
+            ga.type = 'text/javascript';
+            ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+    <!-- End Google Analytics Code -->
+
+
+</body>
+</html>
